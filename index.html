@@ -3,7 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="referrer" content="no-referrer-when-downgrade">
     <title>Submit 311 Service Request - City of Frederick</title>
     <!-- Bootstrap CSS -->
     <link
@@ -2622,12 +2621,7 @@
       // Configure ESRI API Key globally as soon as the API loads
       require(["esri/config"], function(esriConfig) {
         esriConfig.apiKey = ESRI_API_KEY;
-        esriConfig.request.corsEnabledServers.push("js.arcgis.com");
-        esriConfig.request.corsEnabledServers.push("*.arcgis.com");
-        esriConfig.fontUrls = "https://js.arcgis.com/4.28/esri/themes/light/fonts";
-        console.log("ESRI Configuration completed successfully");
       });
-      
       const SERVER_URL_PAGE = "https://api.ignatius.io";
       const PUBLIC_REQUESTS_TABLEKEY = "msfxaraq3"; // Public Requests Table
       const REQUEST_EAM_REPORT_REPORT_ID = "vygamxbq7"; // Request EAM Report Report
@@ -3992,7 +3986,7 @@
 
               // Create the map
               const map = new Map({
-                basemap: "streets-vector", // ESRI streets basemap with updated API key
+                basemap: "arcgis-streets", // ESRI streets basemap with updated API key
                 layers: [cityBoundaryLayer] // Include Frederick city boundary layer
             });
             
@@ -4127,21 +4121,10 @@
               hideMapLoading();
               loadExistingServiceRequests();
             }).catch(function(error) {
-              console.error("Error loading ESRI Map:", error);
               showMapError();
             });
             map.basemap.load().then(function() {
-              console.log("ESRI Map basemap loaded successfully");
             }).catch(function(error) {
-              console.error("Error loading ESRI Map basemap:", error);
-              try {
-                map.basemap = "streets-navigation-vector";
-                console.log("ESRI Map basemap fallback to streets-navigation-vector loaded successfully");
-              } catch (error) {
-                console.error("Error loading ESRI Map basemap fallback to streets-navigation-vector:", error);
-                map.basemap = "gray-vector";
-                console.log("ESRI Map basemap fallback to gray-vector loaded successfully");
-              }
             });
           });
         }
