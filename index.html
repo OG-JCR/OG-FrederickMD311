@@ -2624,16 +2624,8 @@
       require(["esri/config"], function(esriConfig) {
         esriConfig.apiKey = ESRI_API_KEY;
         
-        // Configure CORS settings for GitHub Pages
-        esriConfig.request.corsEnabledServers = esriConfig.request.corsEnabledServers || [];
-        esriConfig.request.corsEnabledServers.push("https://js.arcgis.com");
-        esriConfig.request.corsEnabledServers.push("https://services.arcgisonline.com");
-        esriConfig.request.corsEnabledServers.push("https://basemaps.arcgis.com");
-        esriConfig.request.corsEnabledServers.push("https://basemaps-api.arcgis.com");
-        esriConfig.request.corsEnabledServers.push("https://tiles.arcgis.com");
-        esriConfig.request.corsEnabledServers.push("https://static.arcgis.com");
-        esriConfig.request.corsEnabledServers.push("https://cdn.arcgis.com");
-        esriConfig.request.corsEnabledServers.push("https://geocode-api.arcgis.com");
+        // Configure CORS settings for GitHub Pages - enable all ESRI services
+        esriConfig.request.corsEnabledServers = true;
         
         // Set request timeout and other settings
         esriConfig.request.timeout = 30000;
@@ -2651,11 +2643,8 @@
         // Firefox-specific configuration
         if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
           esriConfig.request.useIdentity = false;
-          esriConfig.request.trustedServers.push("https://services.arcgisonline.com");
-          esriConfig.request.trustedServers.push("https://basemaps.arcgis.com");
-          esriConfig.request.trustedServers.push("https://basemaps-api.arcgis.com");
-          esriConfig.request.trustedServers.push("https://cdn.arcgis.com");
-          esriConfig.request.trustedServers.push("https://geocode-api.arcgis.com");
+          // Enable all ESRI servers for Firefox
+          esriConfig.request.trustedServers = ["*.arcgis.com", "*.esri.com"];
           console.log("Firefox-specific ESRI configuration applied");
         }
         
