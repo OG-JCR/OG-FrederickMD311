@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer-when-downgrade" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://js.arcgis.com https://services.arcgisonline.com https://basemaps.arcgis.com https://basemaps-api.arcgis.com https://tiles.arcgis.com https://static.arcgis.com https://cdn.arcgis.com https://geocode-api.arcgis.com https://api.ignatius.io https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.arcgis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com; worker-src 'self' blob: data:; child-src 'self' blob: data:; style-src 'self' 'unsafe-inline' https://js.arcgis.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://js.arcgis.com https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: blob: https://js.arcgis.com https://services.arcgisonline.com https://basemaps.arcgis.com https://basemaps-api.arcgis.com https://tiles.arcgis.com https://static.arcgis.com https://cdn.arcgis.com https://www.cityoffrederickmd.gov;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.arcgis.com https://*.esri.com https://api.ignatius.io https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com; worker-src 'self' blob: data:; child-src 'self' blob: data:; style-src 'self' 'unsafe-inline' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: blob: https://*.arcgis.com https://*.esri.com https://www.cityoffrederickmd.gov;" />
     <title>Submit 311 Service Request - City of Frederick</title>
     <!-- Bootstrap CSS -->
     <link
@@ -2624,28 +2624,27 @@
       require(["esri/config"], function(esriConfig) {
         esriConfig.apiKey = ESRI_API_KEY;
         
-        // Configure CORS settings for GitHub Pages - enable all ESRI services
+        // Disable all CORS restrictions for maximum browser compatibility
         esriConfig.request.corsEnabledServers = true;
+        esriConfig.request.corsDetection = false;
+        esriConfig.request.proxyUrl = null;
+        esriConfig.request.alwaysUseProxy = false;
+        esriConfig.request.forceCORS = false;
         
-        // Set request timeout and other settings
+        // Set request timeout and disable strict mode
         esriConfig.request.timeout = 30000;
+        esriConfig.request.maxUrlLength = 2048;
         
-        // Initialize interceptors array if it doesn't exist
-        esriConfig.request.interceptors = esriConfig.request.interceptors || [];
-        esriConfig.request.interceptors.push({
-          urls: "https://services.arcgisonline.com/arcgis/rest/services",
-          before: function(params) {
-            params.requestOptions.query = params.requestOptions.query || {};
-            params.requestOptions.query.f = "json";
-          }
-        });
+        // Disable identity manager for public access
+        esriConfig.request.useIdentity = false;
         
-        // Firefox-specific configuration
-        if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
-          esriConfig.request.useIdentity = false;
-          // Enable all ESRI servers for Firefox
-          esriConfig.request.trustedServers = ["*.arcgis.com", "*.esri.com"];
-          console.log("Firefox-specific ESRI configuration applied");
+        // Browser-specific configuration for maximum compatibility
+        const userAgent = navigator.userAgent.toLowerCase();
+        if (userAgent.indexOf('firefox') > -1 || userAgent.indexOf('safari') > -1 || /mobile|android|iphone|ipad/.test(userAgent)) {
+          esriConfig.request.corsDetection = false;
+          esriConfig.request.trustedServers = ["*"];
+          esriConfig.request.interceptors = [];
+          console.log("Browser-specific ESRI configuration applied for:", userAgent.indexOf('firefox') > -1 ? 'Firefox' : userAgent.indexOf('safari') > -1 ? 'Safari' : 'Mobile');
         }
         
         console.log("ESRI Configuration completed with CORS settings");
