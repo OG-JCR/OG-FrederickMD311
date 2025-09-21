@@ -2633,9 +2633,18 @@
           userToken = CryptoJS.AES.decrypt(encryptedToken, aesKEY).toString(CryptoJS.enc.Utf8);
         }
       } catch (error) {
+        console.error("Error decrypting token:", error);
       }
 
-      let userEmail = CryptoJS.AES.decrypt(localStorage.getItem("UserName"), aesKEY).toString(CryptoJS.enc.Utf8);
+      let userEmail;
+      try {
+        const encryptedUserName = localStorage.getItem("UserName");
+        if (encryptedUserName) {
+          userEmail = CryptoJS.AES.decrypt(encryptedUserName, aesKEY).toString(CryptoJS.enc.Utf8);
+        }
+      } catch (error) {
+        console.error("Error decrypting username:", error);
+      }
 
       // Function to check if current user has anonymous role
       function isAnonymousUser() {
