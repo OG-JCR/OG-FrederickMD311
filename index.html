@@ -3986,15 +3986,23 @@
 
             // Create the map
             const map = new Map({
-              basemap: "street-vector", // ESRI streets basemap - requires API key
+              basemap: "arcgis-streets", // ESRI streets basemap - updated for v4.28
               layers: [cityBoundaryLayer] // Include Frederick city boundary layer
             });
             
 
             // Create the MapView with zoom and extent constraints
             try {
+              // Ensure the container exists before creating the map
+              const mapContainer = document.getElementById("esriMapView");
+              if (!mapContainer) {
+                console.error("Map container 'esriMapView' not found");
+                showMapError();
+                return;
+              }
+              
               esriMapView = new MapView({
-                container: "esriMapView",
+                container: mapContainer,
                 map: map,
                 center: FREDERICK_CENTER,
                 zoom: FREDERICK_ZOOM,
