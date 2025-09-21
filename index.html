@@ -3986,7 +3986,8 @@
 
             // Create the map
             const map = new Map({
-              basemap: "arcgis-streets", // ESRI streets basemap - updated for v4.28
+             //  basemap: "streets", // ESRI streets basemap - requires API key
+              basemap: "osm", // OpenStreetMap - no API key required, works reliably
               layers: [cityBoundaryLayer] // Include Frederick city boundary layer
             });
             
