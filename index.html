@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer-when-downgrade" />
-    <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://js.arcgis.com https://services.arcgisonline.com https://basemaps.arcgis.com https://tiles.arcgis.com https://static.arcgis.com https://api.ignatius.io; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.arcgis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com; style-src 'self' 'unsafe-inline' https://js.arcgis.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://js.arcgis.com https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: https://js.arcgis.com https://services.arcgisonline.com https://basemaps.arcgis.com https://tiles.arcgis.com https://static.arcgis.com;" />
+    <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://js.arcgis.com https://services.arcgisonline.com https://basemaps.arcgis.com https://tiles.arcgis.com https://static.arcgis.com https://api.ignatius.io https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.arcgis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com; style-src 'self' 'unsafe-inline' https://js.arcgis.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://js.arcgis.com https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: https://js.arcgis.com https://services.arcgisonline.com https://basemaps.arcgis.com https://tiles.arcgis.com https://static.arcgis.com https://www.cityoffrederickmd.gov;" />
     <title>Submit 311 Service Request - City of Frederick</title>
     <!-- Bootstrap CSS -->
     <link
@@ -2625,6 +2625,7 @@
         esriConfig.apiKey = ESRI_API_KEY;
         
         // Configure CORS settings for GitHub Pages
+        esriConfig.request.corsEnabledServers = esriConfig.request.corsEnabledServers || [];
         esriConfig.request.corsEnabledServers.push("https://js.arcgis.com");
         esriConfig.request.corsEnabledServers.push("https://services.arcgisonline.com");
         esriConfig.request.corsEnabledServers.push("https://basemaps.arcgis.com");
@@ -2633,6 +2634,9 @@
         
         // Set request timeout and other settings
         esriConfig.request.timeout = 30000;
+        
+        // Initialize interceptors array if it doesn't exist
+        esriConfig.request.interceptors = esriConfig.request.interceptors || [];
         esriConfig.request.interceptors.push({
           urls: "https://services.arcgisonline.com/arcgis/rest/services",
           before: function(params) {
