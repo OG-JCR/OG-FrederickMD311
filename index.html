@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer-when-downgrade" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.arcgis.com https://*.esri.com https://api.ignatius.io https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com; worker-src 'self' blob: data:; child-src 'self' blob: data:; style-src 'self' 'unsafe-inline' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: blob: https://*.arcgis.com https://*.esri.com https://www.cityoffrederickmd.gov;" />
+    <!-- Temporarily disable CSP for maximum ESRI compatibility -->
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.arcgis.com https://*.esri.com https://api.ignatius.io https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com; worker-src 'self' blob: data:; child-src 'self' blob: data:; style-src 'self' 'unsafe-inline' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: blob: https://*.arcgis.com https://*.esri.com https://www.cityoffrederickmd.gov;" /> -->
     <title>Submit 311 Service Request - City of Frederick</title>
     <!-- Bootstrap CSS -->
     <link
@@ -2624,19 +2625,33 @@
       require(["esri/config"], function(esriConfig) {
         esriConfig.apiKey = ESRI_API_KEY;
         
-        // Disable all CORS restrictions for maximum browser compatibility
-        esriConfig.request.corsEnabledServers = true;
-        esriConfig.request.corsDetection = false;
-        esriConfig.request.proxyUrl = null;
-        esriConfig.request.alwaysUseProxy = false;
-        esriConfig.request.forceCORS = false;
-        
-        // Set request timeout and disable strict mode
-        esriConfig.request.timeout = 30000;
-        esriConfig.request.maxUrlLength = 2048;
-        
-        // Disable identity manager for public access
-        esriConfig.request.useIdentity = false;
+        // Maximum permissive ESRI configuration for all browsers
+        try {
+          // Completely disable CORS restrictions
+          esriConfig.request.corsEnabledServers = true;
+          esriConfig.request.corsDetection = false;
+          esriConfig.request.proxyUrl = null;
+          esriConfig.request.alwaysUseProxy = false;
+          esriConfig.request.forceCORS = false;
+          esriConfig.request.useIdentity = false;
+          
+          // Set permissive request settings
+          esriConfig.request.timeout = 60000; // Increased timeout
+          esriConfig.request.maxUrlLength = 8192; // Increased URL length
+          esriConfig.request.httpsDomains = []; // Allow HTTP fallback
+          
+          // Disable all authentication and security checks
+          if (esriConfig.identity) {
+            esriConfig.identity.useSignInPage = false;
+          }
+          
+          // Override any existing interceptors
+          esriConfig.request.interceptors = [];
+          
+          console.log("Maximum permissive ESRI configuration applied");
+        } catch (error) {
+          console.warn("ESRI configuration warning:", error);
+        }
         
         // Browser-specific configuration for maximum compatibility
         const userAgent = navigator.userAgent.toLowerCase();
@@ -4011,11 +4026,35 @@
               cityBoundaryLayer.add(boundaryGraphic);
             });
 
-              // Create the map
-              const map = new Map({
-                basemap: "arcgis-streets", // ESRI streets basemap with updated API key
-                layers: [cityBoundaryLayer] // Include Frederick city boundary layer
-            });
+              // Create the map with fallback basemaps
+              let map;
+              try {
+                map = new Map({
+                  basemap: "arcgis-streets", // Primary: ESRI streets basemap
+                  layers: [cityBoundaryLayer]
+                });
+              } catch (error) {
+                console.warn("Primary basemap failed, trying fallback:", error);
+                try {
+                  map = new Map({
+                    basemap: "streets", // Fallback 1: Basic streets
+                    layers: [cityBoundaryLayer]
+                  });
+                } catch (error2) {
+                  console.warn("Fallback 1 failed, trying fallback 2:", error2);
+                  try {
+                    map = new Map({
+                      basemap: "gray", // Fallback 2: Gray basemap
+                      layers: [cityBoundaryLayer]
+                    });
+                  } catch (error3) {
+                    console.warn("All basemaps failed, using minimal map:", error3);
+                    map = new Map({
+                      layers: [cityBoundaryLayer] // Minimal: No basemap
+                    });
+                  }
+                }
+              }
             
 
             // Create the MapView with zoom and extent constraints
