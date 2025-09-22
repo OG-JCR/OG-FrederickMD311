@@ -2742,15 +2742,35 @@
         }
       }
 
+      // Function to check if token is expired
+      function isTokenExpired() {
+        try {
+          const tokenParts = userToken.split('.');
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            const currentTime = Math.floor(Date.now() / 1000);
+            return payload.exp && payload.exp < currentTime;
+          }
+        } catch (error) {
+          console.warn("Could not decode token for expiration check:", error);
+        }
+        return false;
+      }
+
       // Function to ensure user is authenticated (auto-authenticate if needed)
       async function ensureAuthenticated() {
-        // If we already have a token, we're good
-        if (userToken && userEmail) {
+        // Check if we have a valid, non-expired token
+        if (userToken && userEmail && !isTokenExpired()) {
           return true;
         }
 
-        // Try to authenticate as anonymous user
-        console.log("No authentication found, attempting anonymous authentication...");
+        // Token is missing or expired, re-authenticate
+        if (userToken && isTokenExpired()) {
+          console.log("Token expired, re-authenticating...");
+        } else {
+          console.log("No authentication found, attempting anonymous authentication...");
+        }
+        
         return await authenticateAnonymousUser();
       }
 
