@@ -2668,25 +2668,72 @@
       const PUBLIC_REQUESTS_TABLEKEY = "msfxaraq3"; // Public Requests Table
       const REQUEST_EAM_REPORT_REPORT_ID = "vygamxbq7"; // Request EAM Report Report
       
-      let userToken;
-      try {
-        const encryptedToken = localStorage.getItem("token");
-        if (encryptedToken) {
-          userToken = CryptoJS.AES.decrypt(encryptedToken, aesKEY).toString(CryptoJS.enc.Utf8);
+      // Function to clear expired or corrupted tokens
+      function clearStoredTokens() {
+        try {
+          localStorage.removeItem("token");
+          localStorage.removeItem("UserName");
+          console.log("Cleared stored authentication tokens");
+        } catch (error) {
+          console.error("Error clearing tokens:", error);
         }
-      } catch (error) {
-        console.error("Error decrypting token:", error);
       }
 
-      let userEmail;
-      try {
-        const encryptedUserName = localStorage.getItem("UserName");
-        if (encryptedUserName) {
-          userEmail = CryptoJS.AES.decrypt(encryptedUserName, aesKEY).toString(CryptoJS.enc.Utf8);
+      // Function to safely load and validate stored tokens
+      function loadStoredTokens() {
+        let token = null;
+        let email = null;
+        
+        try {
+          const encryptedToken = localStorage.getItem("token");
+          if (encryptedToken) {
+            token = CryptoJS.AES.decrypt(encryptedToken, aesKEY).toString(CryptoJS.enc.Utf8);
+            
+            // Validate token format (should be JWT)
+            if (token && token.split('.').length !== 3) {
+              console.warn("Invalid token format, clearing...");
+              clearStoredTokens();
+              return { token: null, email: null };
+            }
+          }
+        } catch (error) {
+          console.warn("Error decrypting token, clearing stored data:", error);
+          clearStoredTokens();
+          return { token: null, email: null };
         }
-      } catch (error) {
-        console.error("Error decrypting username:", error);
+
+        try {
+          const encryptedUserName = localStorage.getItem("UserName");
+          if (encryptedUserName) {
+            email = CryptoJS.AES.decrypt(encryptedUserName, aesKEY).toString(CryptoJS.enc.Utf8);
+          }
+        } catch (error) {
+          console.warn("Error decrypting username, clearing stored data:", error);
+          clearStoredTokens();
+          return { token: null, email: null };
+        }
+
+        return { token, email };
       }
+
+      // App version for cache management
+      const APP_VERSION = "1.2.0";
+      
+      // Check if app version has changed and clear cache if needed
+      function checkAppVersion() {
+        const storedVersion = localStorage.getItem("appVersion");
+        if (storedVersion !== APP_VERSION) {
+          console.log(`App updated from ${storedVersion || 'unknown'} to ${APP_VERSION}, clearing cache...`);
+          clearStoredTokens();
+          localStorage.setItem("appVersion", APP_VERSION);
+          return true; // Cache was cleared
+        }
+        return false; // No cache clear needed
+      }
+      
+      // Check version first, then load tokens
+      const cacheCleared = checkAppVersion();
+      const { token: userToken, email: userEmail } = cacheCleared ? { token: null, email: null } : loadStoredTokens();
 
       // Function to check if current user has anonymous role
       function isAnonymousUser() {
@@ -2742,31 +2789,53 @@
         }
       }
 
-      // Function to check if token is expired
-      function isTokenExpired() {
+      // Function to check if token is expired or invalid
+      function isTokenExpired(token) {
+        if (!token) return true;
+        
         try {
-          const tokenParts = userToken.split('.');
-          if (tokenParts.length === 3) {
-            const payload = JSON.parse(atob(tokenParts[1]));
-            const currentTime = Math.floor(Date.now() / 1000);
-            return payload.exp && payload.exp < currentTime;
+          const tokenParts = token.split('.');
+          if (tokenParts.length !== 3) {
+            console.warn("Invalid token format");
+            return true;
           }
+          
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const currentTime = Math.floor(Date.now() / 1000);
+          
+          // Check if token has expiration and if it's expired
+          if (payload.exp && payload.exp < currentTime) {
+            console.log("Token expired at:", new Date(payload.exp * 1000));
+            return true;
+          }
+          
+          return false;
         } catch (error) {
-          console.warn("Could not decode token for expiration check:", error);
+          console.warn("Could not decode token, treating as expired:", error);
+          return true;
         }
-        return false;
       }
 
       // Function to ensure user is authenticated (auto-authenticate if needed)
       async function ensureAuthenticated() {
+        // Get current stored tokens
+        const { token: currentToken, email: currentEmail } = loadStoredTokens();
+        
         // Check if we have a valid, non-expired token
-        if (userToken && userEmail && !isTokenExpired()) {
+        if (currentToken && currentEmail && !isTokenExpired(currentToken)) {
+          // Update global variables with current valid tokens
+          window.userToken = currentToken;
+          window.userEmail = currentEmail;
           return true;
         }
 
-        // Token is missing or expired, re-authenticate
-        if (userToken && isTokenExpired()) {
-          console.log("Token expired, re-authenticating...");
+        // Token is missing, expired, or invalid - clear and re-authenticate
+        if (currentToken && isTokenExpired(currentToken)) {
+          console.log("Token expired, clearing cache and re-authenticating...");
+          clearStoredTokens();
+        } else if (currentToken) {
+          console.log("Invalid token found, clearing cache and re-authenticating...");
+          clearStoredTokens();
         } else {
           console.log("No authentication found, attempting anonymous authentication...");
         }
