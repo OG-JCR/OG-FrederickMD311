@@ -2750,7 +2750,7 @@
       }
 
       // App version for cache management
-      const APP_VERSION = "1.2.5";
+      const APP_VERSION = "1.2.6";
       
       // Public user configuration
       const PUBLIC_USER_EMAIL = "public@ignatius.io";
@@ -2797,7 +2797,40 @@
       window.onRecaptchaSuccess = function(token) {
         console.log("reCAPTCHA completed successfully");
         enableSubmitButton();
+        // Proactively generate public token for viewing existing requests
+        generatePublicTokenForViewing(token);
       };
+      
+      // Function to generate public token when reCAPTCHA is completed
+      async function generatePublicTokenForViewing(recaptchaToken) {
+        try {
+          console.log("Generating public token for viewing existing requests...");
+          const response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${recaptchaToken}`);
+          
+          if (response && response.access_token) {
+            // Store the token and user info
+            const encryptedToken = CryptoJS.AES.encrypt(response.access_token, aesKEY).toString();
+            localStorage.setItem("token", encryptedToken);
+            
+            const encryptedUserName = CryptoJS.AES.encrypt(PUBLIC_USER_EMAIL, aesKEY).toString();
+            localStorage.setItem("UserName", encryptedUserName);
+
+            // Update global variables
+            userToken = response.access_token;
+            userEmail = PUBLIC_USER_EMAIL;
+
+            console.log("Public token generated and stored for viewing - existing requests can now be loaded");
+            
+            // If map is already loaded, try to load existing requests now
+            if (esriMapView) {
+              console.log("Map is ready, attempting to load existing requests with new token...");
+              loadExistingServiceRequests();
+            }
+          }
+        } catch (error) {
+          console.log("Could not generate public token for viewing:", error);
+        }
+      }
       
       window.onRecaptchaExpired = function() {
         console.log("reCAPTCHA expired");
@@ -4475,7 +4508,6 @@
           console.log("Attempting to load existing service requests for map display...");
           
           // Try to get a token for viewing existing requests
-          // We'll use a different approach that doesn't require reCAPTCHA for viewing
           let viewingToken = userToken;
           
           if (!viewingToken) {
@@ -4489,15 +4521,35 @@
                   if (viewingToken && !isTokenExpired(viewingToken)) {
                     console.log("Using stored token for viewing existing requests");
                   } else {
+                    console.log("Stored token expired, clearing...");
                     viewingToken = null;
                   }
                 } catch (error) {
-                  console.log("Stored token invalid, will try without authentication");
+                  console.log("Stored token invalid, clearing...");
                   viewingToken = null;
                 }
               }
+              
+              // If no valid stored token, try to get a new public token for viewing
+              if (!viewingToken && typeof grecaptcha !== 'undefined' && grecaptcha.getResponse && grecaptcha.getResponse()) {
+                console.log("reCAPTCHA completed, attempting to get public token for viewing...");
+                try {
+                  const recaptchaToken = grecaptcha.getResponse();
+                  const response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${recaptchaToken}`);
+                  if (response && response.access_token) {
+                    viewingToken = response.access_token;
+                    // Store the token for future use
+                    const encryptedToken = CryptoJS.AES.encrypt(response.access_token, aesKEY).toString();
+                    localStorage.setItem("token", encryptedToken);
+                    userToken = response.access_token;
+                    console.log("Generated new public token for viewing existing requests");
+                  }
+                } catch (error) {
+                  console.log("Could not generate public token for viewing:", error);
+                }
+              }
             } catch (error) {
-              console.log("Could not retrieve stored token:", error);
+              console.log("Could not retrieve or generate viewing token:", error);
             }
           }
 
