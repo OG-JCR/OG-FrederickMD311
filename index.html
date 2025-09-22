@@ -2750,7 +2750,7 @@
       }
 
       // App version for cache management
-      const APP_VERSION = "1.2.7";
+      const APP_VERSION = "1.2.8";
       
       // Public user configuration
       const PUBLIC_USER_EMAIL = "public@ignatius.io";
@@ -2797,7 +2797,8 @@
       window.onRecaptchaSuccess = function(token) {
         console.log("reCAPTCHA completed successfully");
         enableSubmitButton();
-        // reCAPTCHA is now completed and ready for form submission
+        // Generate public token immediately when reCAPTCHA is completed
+        generatePublicTokenWithRecaptcha(token);
       };
       
       // Function to generate public token immediately on page load (without reCAPTCHA)
@@ -2827,30 +2828,9 @@
             }
           }
           
-          // Try to generate a new public token without reCAPTCHA
-          // Note: This may need backend support for anonymous public token generation
-          try {
-            const response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}`);
-            
-            if (response && response.access_token) {
-              // Store the token and user info
-              const encryptedToken = CryptoJS.AES.encrypt(response.access_token, aesKEY).toString();
-              localStorage.setItem("token", encryptedToken);
-              
-              const encryptedUserName = CryptoJS.AES.encrypt(PUBLIC_USER_EMAIL, aesKEY).toString();
-              localStorage.setItem("UserName", encryptedUserName);
-
-              // Update global variables
-              userToken = response.access_token;
-              userEmail = PUBLIC_USER_EMAIL;
-
-              console.log("Public access token generated successfully on page load");
-              return true;
-            }
-          } catch (error) {
-            console.log("Could not generate public token without reCAPTCHA:", error);
-            console.log("Will wait for reCAPTCHA completion for token generation");
-          }
+          // Backend API requires reCAPTCHA token, so we can't generate without it
+          console.log("Backend requires reCAPTCHA token for public token generation");
+          console.log("Will wait for reCAPTCHA completion for token generation");
           
           return false;
         } catch (error) {
@@ -2877,7 +2857,14 @@
             userToken = response.access_token;
             userEmail = PUBLIC_USER_EMAIL;
 
-            console.log("Public token generated with reCAPTCHA for form submission");
+            console.log("Public token generated with reCAPTCHA - now available for viewing and submission");
+            
+            // If map is already loaded, try to load existing requests now
+            if (esriMapView) {
+              console.log("Map is ready, attempting to load existing requests with new token...");
+              loadExistingServiceRequests();
+            }
+            
             return true;
           }
           return false;
@@ -3078,18 +3065,23 @@
 
       // Function to create 311 service request record
       async function createServiceRequest(serviceRequestData) {
-        // For form submission, we need reCAPTCHA verification
-        let recaptchaToken;
-        try {
-          recaptchaToken = await executeRecaptcha();
-        } catch (error) {
-          throw new Error("Please complete the reCAPTCHA verification before submitting.");
-        }
-        
-        // Generate fresh token with reCAPTCHA for form submission
-        const isAuthenticated = await authenticateAnonymousUser(recaptchaToken);
-        if (!isAuthenticated) {
-          throw new Error("Unable to authenticate user. Please complete the reCAPTCHA and try again.");
+        // Check if we already have a valid token from reCAPTCHA completion
+        if (userToken && !isTokenExpired(userToken)) {
+          console.log("Using existing token from reCAPTCHA completion for form submission");
+        } else {
+          // For form submission, we need reCAPTCHA verification
+          let recaptchaToken;
+          try {
+            recaptchaToken = await executeRecaptcha();
+          } catch (error) {
+            throw new Error("Please complete the reCAPTCHA verification before submitting.");
+          }
+          
+          // Generate fresh token with reCAPTCHA for form submission
+          const isAuthenticated = await authenticateAnonymousUser(recaptchaToken);
+          if (!isAuthenticated) {
+            throw new Error("Unable to authenticate user. Please complete the reCAPTCHA and try again.");
+          }
         }
 
         // Create fieldsList array for API submission
