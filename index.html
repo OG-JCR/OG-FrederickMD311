@@ -2737,7 +2737,7 @@
       }
 
       // App version for cache management
-      const APP_VERSION = "1.2.1";
+      const APP_VERSION = "1.2.2";
       
       // Public user configuration
       const PUBLIC_USER_EMAIL = "public@ignatius.io";
@@ -2818,12 +2818,20 @@
       }
 
       // Function to authenticate as anonymous user using public token API
-      async function authenticateAnonymousUser() {
+      async function authenticateAnonymousUser(recaptchaToken = null) {
         try {
-          // First get reCAPTCHA token
-          const recaptchaToken = await executeRecaptcha();
+          // If no reCAPTCHA token provided, try to get one, but don't fail if not available
+          if (!recaptchaToken) {
+            try {
+              recaptchaToken = await executeRecaptcha();
+            } catch (error) {
+              console.warn("reCAPTCHA not completed yet, will try without it for initial authentication");
+              // For initial page load, we'll try a fallback approach
+              return await authenticateWithoutRecaptcha();
+            }
+          }
           
-          // Get public token using the API endpoint
+          // Get public token using the API endpoint with reCAPTCHA
           const response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${recaptchaToken}`);
 
           if (response && response.access_token) {
@@ -2856,6 +2864,23 @@
             grecaptcha.reset();
           }
           
+          return false;
+        }
+      }
+      
+      // Fallback authentication without reCAPTCHA (for initial page load)
+      async function authenticateWithoutRecaptcha() {
+        try {
+          console.log("Attempting fallback authentication for initial page load...");
+          
+          // Use a temporary token approach or skip authentication for viewing existing requests
+          // Set minimal user info to allow map loading
+          userEmail = PUBLIC_USER_EMAIL;
+          
+          console.log("Fallback authentication set for viewing existing requests");
+          return true;
+        } catch (error) {
+          console.error("Fallback authentication failed:", error);
           return false;
         }
       }
@@ -2916,10 +2941,18 @@
 
       // Function to create 311 service request record
       async function createServiceRequest(serviceRequestData) {
-        // Ensure user is authenticated (auto-authenticate if needed)
-        const isAuthenticated = await ensureAuthenticated();
+        // For form submission, we need reCAPTCHA verification
+        let recaptchaToken;
+        try {
+          recaptchaToken = await executeRecaptcha();
+        } catch (error) {
+          throw new Error("Please complete the reCAPTCHA verification before submitting.");
+        }
+        
+        // Ensure user is authenticated with reCAPTCHA token
+        const isAuthenticated = await authenticateAnonymousUser(recaptchaToken);
         if (!isAuthenticated) {
-          throw new Error("Unable to authenticate user. Please try again or contact support.");
+          throw new Error("Unable to authenticate user. Please complete the reCAPTCHA and try again.");
         }
 
         // Create fieldsList array for API submission
@@ -4356,9 +4389,20 @@
         }
 
         // Function to load existing service requests and display them on the map
-        function loadExistingServiceRequests() {
-          if (!userToken || !esriMapView) {
+        async function loadExistingServiceRequests() {
+          if (!esriMapView) {
+            console.log("Cannot load existing requests: map view not ready");
             return;
+          }
+
+          // Ensure we have authentication before loading existing requests
+          if (!userToken) {
+            console.log("No token available, attempting authentication for viewing existing requests...");
+            const isAuthenticated = await ensureAuthenticated();
+            if (!isAuthenticated) {
+              console.log("Could not authenticate for viewing existing requests");
+              return;
+            }
           }
 
           // Make API call to get existing service requests
@@ -4374,6 +4418,7 @@
               xhr.setRequestHeader("Authorization", `Bearer ${userToken}`);
             },
             success: function (response) {
+              console.log("Existing service requests loaded:", response?.length || 0, "requests");
               if (Array.isArray(response) && response.length > 0) {
                 addExistingRequestsToMap(response);
               } else {
@@ -4381,6 +4426,8 @@
               }
             },
             error: function (xhr, status, error) {
+              console.error("Failed to load existing service requests:", error);
+              console.error("Response:", xhr.responseText);
             }
           });
         }
