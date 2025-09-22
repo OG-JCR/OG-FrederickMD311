@@ -2750,7 +2750,7 @@
       }
 
       // App version for cache management
-      const APP_VERSION = "1.2.3";
+      const APP_VERSION = "1.2.4";
       
       // Public user configuration
       const PUBLIC_USER_EMAIL = "public@ignatius.io";
@@ -2933,12 +2933,10 @@
         try {
           console.log("Attempting fallback authentication for initial page load...");
           
-          // Use a temporary token approach or skip authentication for viewing existing requests
-          // Set minimal user info to allow map loading
-          userEmail = PUBLIC_USER_EMAIL;
-          
-          console.log("Fallback authentication set for viewing existing requests");
-          return true;
+          // For viewing existing requests, we'll skip authentication entirely
+          // The public form doesn't need to show existing requests to anonymous users
+          console.log("Skipping authentication for public anonymous form - existing requests not needed");
+          return false; // Return false to skip loading existing requests
         } catch (error) {
           console.error("Fallback authentication failed:", error);
           return false;
@@ -4455,6 +4453,14 @@
             return;
           }
 
+          // For the public anonymous form, we'll skip loading existing requests
+          // This avoids authentication issues and CORS problems
+          console.log("Skipping existing service requests loading for public anonymous form");
+          console.log("Public users can submit new requests but don't need to see existing ones");
+          return;
+          
+          // The code below is kept for reference but not executed in public form
+          /*
           // Ensure we have authentication before loading existing requests
           if (!userToken) {
             console.log("No token available, attempting authentication for viewing existing requests...");
@@ -4490,6 +4496,7 @@
               console.error("Response:", xhr.responseText);
             }
           });
+          */
         }
 
         // Function to add existing service requests as markers on the map
@@ -5392,17 +5399,23 @@
               `;
             } else if (fileObj.url && fileObj.type.startsWith('image/')) {
               const compressionNote = fileObj.wasCompressed ? '<div class="compression-note"><i class="bi bi-info-circle"></i> Compressed</div>' : '';
-              previewItem.innerHTML = `
-                <img src="${fileObj.url}" alt="Preview">
-                <div class="file-status success">
-                  <i class="bi bi-check-circle-fill"></i>
-                </div>
-                ${compressionNote}
-                <button type="button" class="remove-photo" onclick="removeFile(${fileObj.id})">
-                  <i class="bi bi-x"></i>
-                </button>
-              `;
-            } else if (fileObj.url) {
+              // Ensure fileObj.url is valid before using it
+              const imageUrl = fileObj.url && fileObj.url !== 'undefined' ? fileObj.url : '';
+              if (imageUrl) {
+                previewItem.innerHTML = `
+                  <img src="${imageUrl}" alt="Preview">
+                  <div class="file-status success">
+                    <i class="bi bi-check-circle-fill"></i>
+                  </div>
+                  ${compressionNote}
+                  <button type="button" class="remove-photo" onclick="removeFile(${fileObj.id})">
+                    <i class="bi bi-x"></i>
+                  </button>
+                `;
+              } else {
+                console.warn('Invalid file URL for preview:', fileObj);
+              }
+            } else if (fileObj.url && fileObj.url !== 'undefined') {
               let fileIcon = "bi-file-earmark";
               if (fileObj.type.includes('pdf')) {
                 fileIcon = "bi-file-earmark-pdf";
