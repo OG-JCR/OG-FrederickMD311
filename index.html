@@ -2733,7 +2733,11 @@
       
       // Check version first, then load tokens
       const cacheCleared = checkAppVersion();
-      const { token: userToken, email: userEmail } = cacheCleared ? { token: null, email: null } : loadStoredTokens();
+      const tokenData = cacheCleared ? { token: null, email: null } : loadStoredTokens();
+      
+      // Declare as let so they can be reassigned during authentication
+      let userToken = tokenData.token;
+      let userEmail = tokenData.email;
 
       // Function to check if current user has anonymous role
       function isAnonymousUser() {
@@ -2824,8 +2828,8 @@
         // Check if we have a valid, non-expired token
         if (currentToken && currentEmail && !isTokenExpired(currentToken)) {
           // Update global variables with current valid tokens
-          window.userToken = currentToken;
-          window.userEmail = currentEmail;
+          userToken = currentToken;
+          userEmail = currentEmail;
           return true;
         }
 
