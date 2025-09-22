@@ -2653,29 +2653,13 @@
           console.warn("ESRI configuration warning:", error);
         }
         
-        // Mobile-specific configuration
+        // Browser-specific configuration for maximum compatibility
         const userAgent = navigator.userAgent.toLowerCase();
-        const isMobile = /mobile|android|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
-        const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent);
-        const isIOS = /iphone|ipad|ipod/.test(userAgent);
-        
-        if (isMobile || isSafari || isIOS) {
-          // Mobile Safari specific settings
+        if (userAgent.indexOf('firefox') > -1 || userAgent.indexOf('safari') > -1 || /mobile|android|iphone|ipad/.test(userAgent)) {
           esriConfig.request.corsDetection = false;
           esriConfig.request.trustedServers = ["*"];
           esriConfig.request.interceptors = [];
-          esriConfig.request.timeout = 120000; // 2 minute timeout for mobile
-          esriConfig.request.maxUrlLength = 4096;
-          
-          // Disable features that cause mobile issues
-          esriConfig.workers.loaderConfig = {
-            has: {
-              "esri-workers": false // Disable web workers on mobile
-            }
-          };
-          
-          console.log("Mobile-optimized ESRI configuration applied for:", 
-            isIOS ? 'iOS' : isMobile ? 'Mobile' : 'Safari');
+          console.log("Browser-specific ESRI configuration applied for:", userAgent.indexOf('firefox') > -1 ? 'Firefox' : userAgent.indexOf('safari') > -1 ? 'Safari' : 'Mobile');
         }
         
         console.log("ESRI Configuration completed with CORS settings");
@@ -4042,52 +4026,38 @@
               cityBoundaryLayer.add(boundaryGraphic);
             });
 
-              // Create the map with mobile-optimized basemaps
+              // Create the map with fallback basemaps
               let map;
-              const userAgent = navigator.userAgent.toLowerCase();
-              const isMobile = /mobile|android|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
-              const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent);
-              
               try {
-                if (isMobile || isSafari) {
-                  // Mobile-optimized basemap selection
-                  console.log("Creating mobile-optimized map");
-                  map = new Map({
-                    basemap: "gray-vector", // Lightweight basemap for mobile
-                    layers: [cityBoundaryLayer]
-                  });
-                } else {
-                  // Desktop basemap
-                  map = new Map({
-                    basemap: "arcgis-streets",
-                    layers: [cityBoundaryLayer]
-                  });
-                }
+                map = new Map({
+                  basemap: "arcgis-streets", // Primary: ESRI streets basemap
+                  layers: [cityBoundaryLayer]
+                });
               } catch (error) {
-                console.warn("Primary basemap failed, trying fallbacks:", error);
+                console.warn("Primary basemap failed, trying fallback:", error);
                 try {
                   map = new Map({
-                    basemap: "osm", // OpenStreetMap fallback
+                    basemap: "streets", // Fallback 1: Basic streets
                     layers: [cityBoundaryLayer]
                   });
                 } catch (error2) {
-                  console.warn("OSM fallback failed, trying basic:", error2);
+                  console.warn("Fallback 1 failed, trying fallback 2:", error2);
                   try {
                     map = new Map({
-                      basemap: "gray", // Simple gray basemap
+                      basemap: "gray", // Fallback 2: Gray basemap
                       layers: [cityBoundaryLayer]
                     });
                   } catch (error3) {
                     console.warn("All basemaps failed, using minimal map:", error3);
                     map = new Map({
-                      layers: [cityBoundaryLayer] // No basemap
+                      layers: [cityBoundaryLayer] // Minimal: No basemap
                     });
                   }
                 }
               }
             
 
-            // Create the MapView with mobile-optimized settings
+            // Create the MapView with zoom and extent constraints
             try {
               // Ensure the container exists before creating the map
               const mapContainer = document.getElementById("esriMapView");
@@ -4097,15 +4067,14 @@
                 return;
               }
               
-              // Mobile-specific MapView configuration
-              const mapViewConfig = {
+              esriMapView = new MapView({
                 container: mapContainer,
                 map: map,
                 center: FREDERICK_CENTER,
-                zoom: isMobile ? FREDERICK_ZOOM - 1 : FREDERICK_ZOOM, // Zoom out on mobile
+                zoom: FREDERICK_ZOOM,
                 constraints: {
                   minZoom: 10, 
-                  maxZoom: isMobile ? 15 : 16, // Lower max zoom on mobile
+                  maxZoom: 16, 
                   geometry: {
                     type: "extent",
                     xmin: -77.5,  
@@ -4116,16 +4085,9 @@
                   }
                 },
                 ui: {
-                  components: isMobile ? ["attribution"] : ["attribution", "zoom"] // Minimal UI on mobile
-                },
-                // Mobile performance optimizations
-                resizeAlign: "center",
-                spatialReference: { wkid: 4326 },
-                // Disable animations on mobile for better performance
-                animation: isMobile ? false : true
-              };
-              
-              esriMapView = new MapView(mapViewConfig);
+                  components: ["attribution"] // Minimal UI
+                }
+              });
             } catch (error) {
               showMapError();
               return;
