@@ -2750,7 +2750,7 @@
       }
 
       // App version for cache management
-      const APP_VERSION = "1.2.4";
+      const APP_VERSION = "1.2.5";
       
       // Public user configuration
       const PUBLIC_USER_EMAIL = "public@ignatius.io";
@@ -2933,10 +2933,29 @@
         try {
           console.log("Attempting fallback authentication for initial page load...");
           
-          // For viewing existing requests, we'll skip authentication entirely
-          // The public form doesn't need to show existing requests to anonymous users
-          console.log("Skipping authentication for public anonymous form - existing requests not needed");
-          return false; // Return false to skip loading existing requests
+          // Check if we have a valid stored token first
+          const storedToken = localStorage.getItem("token");
+          if (storedToken) {
+            try {
+              const decryptedToken = CryptoJS.AES.decrypt(storedToken, aesKEY).toString(CryptoJS.enc.Utf8);
+              if (decryptedToken && !isTokenExpired(decryptedToken)) {
+                userToken = decryptedToken;
+                const storedEmail = localStorage.getItem("UserName");
+                if (storedEmail) {
+                  userEmail = CryptoJS.AES.decrypt(storedEmail, aesKEY).toString(CryptoJS.enc.Utf8);
+                }
+                console.log("Using valid stored token for fallback authentication");
+                return true;
+              }
+            } catch (error) {
+              console.log("Stored token invalid or expired");
+            }
+          }
+          
+          // Set minimal user info for public access
+          userEmail = PUBLIC_USER_EMAIL;
+          console.log("Fallback authentication set for public viewing");
+          return false; // No token available, but user info is set
         } catch (error) {
           console.error("Fallback authentication failed:", error);
           return false;
@@ -4453,26 +4472,37 @@
             return;
           }
 
-          // For the public anonymous form, we'll skip loading existing requests
-          // This avoids authentication issues and CORS problems
-          console.log("Skipping existing service requests loading for public anonymous form");
-          console.log("Public users can submit new requests but don't need to see existing ones");
-          return;
+          console.log("Attempting to load existing service requests for map display...");
           
-          // The code below is kept for reference but not executed in public form
-          /*
-          // Ensure we have authentication before loading existing requests
-          if (!userToken) {
-            console.log("No token available, attempting authentication for viewing existing requests...");
-            const isAuthenticated = await ensureAuthenticated();
-            if (!isAuthenticated) {
-              console.log("Could not authenticate for viewing existing requests");
-              return;
+          // Try to get a token for viewing existing requests
+          // We'll use a different approach that doesn't require reCAPTCHA for viewing
+          let viewingToken = userToken;
+          
+          if (!viewingToken) {
+            console.log("No token available, attempting to get viewing token...");
+            try {
+              // Try to get a token from localStorage first
+              const storedToken = localStorage.getItem("token");
+              if (storedToken) {
+                try {
+                  viewingToken = CryptoJS.AES.decrypt(storedToken, aesKEY).toString(CryptoJS.enc.Utf8);
+                  if (viewingToken && !isTokenExpired(viewingToken)) {
+                    console.log("Using stored token for viewing existing requests");
+                  } else {
+                    viewingToken = null;
+                  }
+                } catch (error) {
+                  console.log("Stored token invalid, will try without authentication");
+                  viewingToken = null;
+                }
+              }
+            } catch (error) {
+              console.log("Could not retrieve stored token:", error);
             }
           }
 
           // Make API call to get existing service requests
-          $.ajax({
+          const ajaxConfig = {
             url: `${SERVER_URL_PAGE}/api/Report/queryreport`,
             type: "POST",
             contentType: "application/json",
@@ -4480,23 +4510,31 @@
               ReportId: REQUEST_EAM_REPORT_REPORT_ID
             }),
             timeout: 15000,
-            beforeSend: function (xhr) {
-              xhr.setRequestHeader("Authorization", `Bearer ${userToken}`);
-            },
             success: function (response) {
               console.log("Existing service requests loaded:", response?.length || 0, "requests");
               if (Array.isArray(response) && response.length > 0) {
                 addExistingRequestsToMap(response);
               } else {
-                showCoordinateMessage("No existing service requests found");
+                console.log("No existing service requests found or empty response");
               }
             },
             error: function (xhr, status, error) {
-              console.error("Failed to load existing service requests:", error);
-              console.error("Response:", xhr.responseText);
+              console.log("Could not load existing service requests:", error);
+              console.log("This is normal for public forms - continuing without existing data");
             }
-          });
-          */
+          };
+          
+          // Add authorization header if we have a token
+          if (viewingToken) {
+            ajaxConfig.beforeSend = function (xhr) {
+              xhr.setRequestHeader("Authorization", `Bearer ${viewingToken}`);
+            };
+            console.log("Making authenticated request for existing service requests");
+          } else {
+            console.log("Making unauthenticated request for existing service requests");
+          }
+          
+          $.ajax(ajaxConfig);
         }
 
         // Function to add existing service requests as markers on the map
