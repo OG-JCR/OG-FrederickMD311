@@ -4,8 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer-when-downgrade" />
-    <!-- Temporarily disable CSP for maximum ESRI compatibility -->
-    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.arcgis.com https://*.esri.com https://api.ignatius.io https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com; worker-src 'self' blob: data:; child-src 'self' blob: data:; style-src 'self' 'unsafe-inline' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: blob: https://*.arcgis.com https://*.esri.com https://www.cityoffrederickmd.gov;" /> -->
+    <!-- CSP with reCAPTCHA and ESRI support -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      connect-src 'self' https://*.arcgis.com https://*.esri.com https://www.google.com https://www.gstatic.com https://api.ignatius.io https://cdn.jsdelivr.net;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.arcgis.com https://*.esri.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com;
+      worker-src 'self' blob: data:;
+      child-src 'self' blob: data:;
+      frame-src 'self' https://www.google.com;
+      style-src 'self' 'unsafe-inline' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://fonts.googleapis.com;
+      font-src 'self' https://*.arcgis.com https://*.esri.com https://cdn.jsdelivr.net https://fonts.gstatic.com;
+      img-src 'self' data: blob: https://*.arcgis.com https://*.esri.com https://www.cityoffrederickmd.gov;
+    " />
     <title>Submit 311 Service Request - City of Frederick</title>
     <!-- Bootstrap CSS -->
     <link
@@ -24,6 +34,8 @@
     />
     <!-- ESRI ArcGIS API CSS -->
     <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
+    <!-- Google reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
       /* Frederick, MD Theme Variables */
       :root {
@@ -2488,6 +2500,11 @@
             </div>
           </div>
 
+          <!-- reCAPTCHA Section -->
+          <div class="form-section">
+            <div class="g-recaptcha" data-sitekey="6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj"></div>
+          </div>
+
           <!-- Submit Section -->
           <div class="submit-section">
             <button type="submit" class="submit-button" id="submitButton">
@@ -2496,7 +2513,10 @@
             </button>
 
             <div class="submit-help">
-              Once submitted, you'll receive a confirmation email with your request details. 
+              Once submitted, you'll receive a confirmation email with your request details.
+              <br><small class="text-muted mt-2 d-block">This site is protected by reCAPTCHA and the Google 
+              <a href="https://policies.google.com/privacy" target="_blank">Privacy Policy</a> and 
+              <a href="https://policies.google.com/terms" target="_blank">Terms of Service</a> apply.</small>
             </div>
           </div>
         </div>
@@ -2717,7 +2737,51 @@
       }
 
       // App version for cache management
-      const APP_VERSION = "1.2.0";
+      const APP_VERSION = "1.2.1";
+      
+      // Public user configuration
+      const PUBLIC_USER_EMAIL = "public@ignatius.io";
+      const APP_ID = "sxol7egq1";
+      
+      // reCAPTCHA configuration
+      const RECAPTCHA_SITE_KEY = "6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj"; // Using the same site key from reference
+      let recaptchaLoaded = false;
+      
+      // Initialize reCAPTCHA when ready
+      function initializeRecaptcha() {
+        if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
+          grecaptcha.ready(function() {
+            recaptchaLoaded = true;
+            console.log("reCAPTCHA initialized successfully");
+          });
+        } else {
+          // Retry after a short delay if reCAPTCHA isn't loaded yet
+          setTimeout(initializeRecaptcha, 1000);
+        }
+      }
+      
+      // Execute reCAPTCHA and get token
+      async function executeRecaptcha() {
+        if (!recaptchaLoaded || typeof grecaptcha === 'undefined') {
+          console.warn("reCAPTCHA not loaded, cannot proceed without verification");
+          throw new Error("reCAPTCHA verification is required. Please refresh the page and try again.");
+        }
+        
+        try {
+          const response = grecaptcha.getResponse();
+          if (!response) {
+            throw new Error("Please complete the reCAPTCHA verification.");
+          }
+          console.log("reCAPTCHA token obtained");
+          return response;
+        } catch (error) {
+          console.error("reCAPTCHA execution failed:", error);
+          throw error;
+        }
+      }
+      
+      // Initialize reCAPTCHA on page load
+      setTimeout(initializeRecaptcha, 2000);
       
       // Check if app version has changed and clear cache if needed
       function checkAppVersion() {
@@ -2743,7 +2807,7 @@
       function isAnonymousUser() {
         try {
           // Check if userEmail indicates anonymous/public user
-          if (userEmail === "publicuser@admin.com") {
+          if (userEmail === PUBLIC_USER_EMAIL) {
             return true;
           }
           return false;
@@ -2753,42 +2817,45 @@
         }
       }
 
-      // Function to authenticate as anonymous user
+      // Function to authenticate as anonymous user using public token API
       async function authenticateAnonymousUser() {
         try {
-          const authPayload = {
-            grant_type: "password",
-            username: "publicuser@admin.com",
-            password: "Welcome1234!",
-            client_id: "OpenGov"
-          };
-
-          const response = await $.ajax({
-            url: `${SERVER_URL_PAGE}/token`,
-            type: "POST",
-            contentType: "application/x-www-form-urlencoded",
-            data: $.param(authPayload),
-            timeout: 10000
-          });
+          // First get reCAPTCHA token
+          const recaptchaToken = await executeRecaptcha();
+          
+          // Get public token using the API endpoint
+          const response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${recaptchaToken}`);
 
           if (response && response.access_token) {
             // Store the token and user info
             const encryptedToken = CryptoJS.AES.encrypt(response.access_token, aesKEY).toString();
             localStorage.setItem("token", encryptedToken);
             
-            const encryptedUserName = CryptoJS.AES.encrypt(response.userName || "publicuser@admin.com", aesKEY).toString();
+            const encryptedUserName = CryptoJS.AES.encrypt(PUBLIC_USER_EMAIL, aesKEY).toString();
             localStorage.setItem("UserName", encryptedUserName);
 
             // Update global variables
             userToken = response.access_token;
-            userEmail = response.userName || "publicuser@admin.com";
+            userEmail = PUBLIC_USER_EMAIL;
 
-            console.log("Anonymous user authenticated successfully");
+            console.log("Anonymous user authenticated successfully with public token");
+            
+            // Reset reCAPTCHA after successful authentication
+            if (typeof grecaptcha !== 'undefined') {
+              grecaptcha.reset();
+            }
+            
             return true;
           }
           return false;
         } catch (error) {
           console.error("Failed to authenticate anonymous user:", error);
+          
+          // Reset reCAPTCHA on error
+          if (typeof grecaptcha !== 'undefined') {
+            grecaptcha.reset();
+          }
+          
           return false;
         }
       }
