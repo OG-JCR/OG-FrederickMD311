@@ -710,6 +710,15 @@
         cursor: not-allowed;
         transform: none;
         box-shadow: none;
+        opacity: 0.6;
+      }
+      
+      .submit-button.disabled {
+        background: var(--text-light) !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+        box-shadow: none !important;
+        opacity: 0.6 !important;
       }
 
       .submit-help {
@@ -2502,14 +2511,18 @@
 
           <!-- reCAPTCHA Section -->
           <div class="form-section">
-            <div class="g-recaptcha" data-sitekey="6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj"></div>
+            <div class="g-recaptcha" 
+                 data-sitekey="6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj"
+                 data-callback="onRecaptchaSuccess"
+                 data-expired-callback="onRecaptchaExpired"
+                 data-error-callback="onRecaptchaError"></div>
           </div>
 
           <!-- Submit Section -->
           <div class="submit-section">
-            <button type="submit" class="submit-button" id="submitButton">
+            <button type="submit" class="submit-button" id="submitButton" disabled>
               <i class="bi bi-send"></i>
-              Submit Service Request
+              <span id="submitButtonText">Complete reCAPTCHA to Submit</span>
             </button>
 
             <div class="submit-help">
@@ -2737,7 +2750,7 @@
       }
 
       // App version for cache management
-      const APP_VERSION = "1.2.2";
+      const APP_VERSION = "1.2.3";
       
       // Public user configuration
       const PUBLIC_USER_EMAIL = "public@ignatius.io";
@@ -2780,8 +2793,55 @@
         }
       }
       
+      // reCAPTCHA callback functions
+      window.onRecaptchaSuccess = function(token) {
+        console.log("reCAPTCHA completed successfully");
+        enableSubmitButton();
+      };
+      
+      window.onRecaptchaExpired = function() {
+        console.log("reCAPTCHA expired");
+        disableSubmitButton();
+      };
+      
+      window.onRecaptchaError = function() {
+        console.log("reCAPTCHA error occurred");
+        disableSubmitButton();
+      };
+      
+      // Function to enable submit button
+      function enableSubmitButton() {
+        const submitButton = document.getElementById('submitButton');
+        const submitButtonText = document.getElementById('submitButtonText');
+        if (submitButton && submitButtonText) {
+          submitButton.disabled = false;
+          submitButton.style.opacity = '1';
+          submitButton.style.cursor = 'pointer';
+          submitButtonText.textContent = 'Submit Service Request';
+          submitButton.classList.remove('disabled');
+        }
+      }
+      
+      // Function to disable submit button
+      function disableSubmitButton() {
+        const submitButton = document.getElementById('submitButton');
+        const submitButtonText = document.getElementById('submitButtonText');
+        if (submitButton && submitButtonText) {
+          submitButton.disabled = true;
+          submitButton.style.opacity = '0.6';
+          submitButton.style.cursor = 'not-allowed';
+          submitButtonText.textContent = 'Complete reCAPTCHA to Submit';
+          submitButton.classList.add('disabled');
+        }
+      }
+      
       // Initialize reCAPTCHA on page load
       setTimeout(initializeRecaptcha, 2000);
+      
+      // Ensure submit button is disabled on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        disableSubmitButton();
+      });
       
       // Check if app version has changed and clear cache if needed
       function checkAppVersion() {
@@ -6025,6 +6085,17 @@
           e.preventDefault();
 
           try {
+            // Check if reCAPTCHA is completed
+            if (typeof grecaptcha === 'undefined' || !grecaptcha.getResponse()) {
+              errorMessage.style.display = "block";
+              errorMessage.innerHTML = `
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Please complete the reCAPTCHA verification before submitting your request.
+              `;
+              errorMessage.scrollIntoView({ behavior: "smooth" });
+              return false;
+            }
+            
             if (!isLocationValid || !selectedCoordinates || 
                 selectedCoordinates.latitude === 0 || selectedCoordinates.longitude === 0 ||
                 selectedCoordinates.latitude === "0" || selectedCoordinates.longitude === "0") {
