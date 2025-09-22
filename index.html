@@ -2750,7 +2750,7 @@
       }
 
       // App version for cache management
-      const APP_VERSION = "1.2.6";
+      const APP_VERSION = "1.2.7";
       
       // Public user configuration
       const PUBLIC_USER_EMAIL = "public@ignatius.io";
@@ -2797,14 +2797,72 @@
       window.onRecaptchaSuccess = function(token) {
         console.log("reCAPTCHA completed successfully");
         enableSubmitButton();
-        // Proactively generate public token for viewing existing requests
-        generatePublicTokenForViewing(token);
+        // reCAPTCHA is now completed and ready for form submission
       };
       
-      // Function to generate public token when reCAPTCHA is completed
-      async function generatePublicTokenForViewing(recaptchaToken) {
+      // Function to generate public token immediately on page load (without reCAPTCHA)
+      async function generatePublicTokenOnLoad() {
         try {
-          console.log("Generating public token for viewing existing requests...");
+          console.log("Generating public access token on page load...");
+          
+          // For the public token API, we need to check if it supports getting a token without reCAPTCHA
+          // If not, we'll need to use a different approach or endpoint
+          
+          // First, try to use any existing valid token
+          const storedToken = localStorage.getItem("token");
+          if (storedToken) {
+            try {
+              const decryptedToken = CryptoJS.AES.decrypt(storedToken, aesKEY).toString(CryptoJS.enc.Utf8);
+              if (decryptedToken && !isTokenExpired(decryptedToken)) {
+                userToken = decryptedToken;
+                const storedEmail = localStorage.getItem("UserName");
+                if (storedEmail) {
+                  userEmail = CryptoJS.AES.decrypt(storedEmail, aesKEY).toString(CryptoJS.enc.Utf8);
+                }
+                console.log("Using existing valid public token");
+                return true;
+              }
+            } catch (error) {
+              console.log("Stored token invalid, will generate new one");
+            }
+          }
+          
+          // Try to generate a new public token without reCAPTCHA
+          // Note: This may need backend support for anonymous public token generation
+          try {
+            const response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}`);
+            
+            if (response && response.access_token) {
+              // Store the token and user info
+              const encryptedToken = CryptoJS.AES.encrypt(response.access_token, aesKEY).toString();
+              localStorage.setItem("token", encryptedToken);
+              
+              const encryptedUserName = CryptoJS.AES.encrypt(PUBLIC_USER_EMAIL, aesKEY).toString();
+              localStorage.setItem("UserName", encryptedUserName);
+
+              // Update global variables
+              userToken = response.access_token;
+              userEmail = PUBLIC_USER_EMAIL;
+
+              console.log("Public access token generated successfully on page load");
+              return true;
+            }
+          } catch (error) {
+            console.log("Could not generate public token without reCAPTCHA:", error);
+            console.log("Will wait for reCAPTCHA completion for token generation");
+          }
+          
+          return false;
+        } catch (error) {
+          console.log("Error in generatePublicTokenOnLoad:", error);
+          return false;
+        }
+      }
+      
+      // Function to generate public token with reCAPTCHA (for form submission)
+      async function generatePublicTokenWithRecaptcha(recaptchaToken) {
+        try {
+          console.log("Generating public token with reCAPTCHA for form submission...");
           const response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${recaptchaToken}`);
           
           if (response && response.access_token) {
@@ -2819,16 +2877,13 @@
             userToken = response.access_token;
             userEmail = PUBLIC_USER_EMAIL;
 
-            console.log("Public token generated and stored for viewing - existing requests can now be loaded");
-            
-            // If map is already loaded, try to load existing requests now
-            if (esriMapView) {
-              console.log("Map is ready, attempting to load existing requests with new token...");
-              loadExistingServiceRequests();
-            }
+            console.log("Public token generated with reCAPTCHA for form submission");
+            return true;
           }
+          return false;
         } catch (error) {
-          console.log("Could not generate public token for viewing:", error);
+          console.log("Could not generate public token with reCAPTCHA:", error);
+          return false;
         }
       }
       
@@ -2913,50 +2968,22 @@
       // Function to authenticate as anonymous user using public token API
       async function authenticateAnonymousUser(recaptchaToken = null) {
         try {
-          // If no reCAPTCHA token provided, try to get one, but don't fail if not available
-          if (!recaptchaToken) {
-            try {
-              recaptchaToken = await executeRecaptcha();
-            } catch (error) {
-              console.warn("reCAPTCHA not completed yet, will try without it for initial authentication");
-              // For initial page load, we'll try a fallback approach
-              return await authenticateWithoutRecaptcha();
-            }
+          // If reCAPTCHA token provided, use it for form submission
+          if (recaptchaToken) {
+            return await generatePublicTokenWithRecaptcha(recaptchaToken);
           }
           
-          // Get public token using the API endpoint with reCAPTCHA
-          const response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${recaptchaToken}`);
-
-          if (response && response.access_token) {
-            // Store the token and user info
-            const encryptedToken = CryptoJS.AES.encrypt(response.access_token, aesKEY).toString();
-            localStorage.setItem("token", encryptedToken);
-            
-            const encryptedUserName = CryptoJS.AES.encrypt(PUBLIC_USER_EMAIL, aesKEY).toString();
-            localStorage.setItem("UserName", encryptedUserName);
-
-            // Update global variables
-            userToken = response.access_token;
-            userEmail = PUBLIC_USER_EMAIL;
-
+          // For initial authentication (viewing), try to generate token without reCAPTCHA
+          const tokenGenerated = await generatePublicTokenOnLoad();
+          if (tokenGenerated) {
             console.log("Anonymous user authenticated successfully with public token");
-            
-            // Reset reCAPTCHA after successful authentication
-            if (typeof grecaptcha !== 'undefined') {
-              grecaptcha.reset();
-            }
-            
             return true;
           }
-          return false;
+          
+          // If token generation failed, fall back to basic authentication
+          return await authenticateWithoutRecaptcha();
         } catch (error) {
           console.error("Failed to authenticate anonymous user:", error);
-          
-          // Reset reCAPTCHA on error
-          if (typeof grecaptcha !== 'undefined') {
-            grecaptcha.reset();
-          }
-          
           return false;
         }
       }
@@ -3059,7 +3086,7 @@
           throw new Error("Please complete the reCAPTCHA verification before submitting.");
         }
         
-        // Ensure user is authenticated with reCAPTCHA token
+        // Generate fresh token with reCAPTCHA for form submission
         const isAuthenticated = await authenticateAnonymousUser(recaptchaToken);
         if (!isAuthenticated) {
           throw new Error("Unable to authenticate user. Please complete the reCAPTCHA and try again.");
@@ -4264,8 +4291,15 @@
         // Initialize authentication for public forms
         async function initializePublicForm() {
           try {
-            await ensureAuthenticated();
-            console.log("Public form initialized with authentication");
+            console.log("Initializing public form with early token generation...");
+            
+            // Try to generate public token immediately on page load
+            const tokenGenerated = await generatePublicTokenOnLoad();
+            if (tokenGenerated) {
+              console.log("Public form initialized with access token - ready for viewing and submission");
+            } else {
+              console.log("Public form initialized - token will be generated when needed");
+            }
           } catch (error) {
             console.error("Failed to initialize public form authentication:", error);
           }
@@ -4530,22 +4564,13 @@
                 }
               }
               
-              // If no valid stored token, try to get a new public token for viewing
-              if (!viewingToken && typeof grecaptcha !== 'undefined' && grecaptcha.getResponse && grecaptcha.getResponse()) {
-                console.log("reCAPTCHA completed, attempting to get public token for viewing...");
-                try {
-                  const recaptchaToken = grecaptcha.getResponse();
-                  const response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${recaptchaToken}`);
-                  if (response && response.access_token) {
-                    viewingToken = response.access_token;
-                    // Store the token for future use
-                    const encryptedToken = CryptoJS.AES.encrypt(response.access_token, aesKEY).toString();
-                    localStorage.setItem("token", encryptedToken);
-                    userToken = response.access_token;
-                    console.log("Generated new public token for viewing existing requests");
-                  }
-                } catch (error) {
-                  console.log("Could not generate public token for viewing:", error);
+              // If no valid stored token, try to generate one without reCAPTCHA
+              if (!viewingToken) {
+                console.log("No stored token available, attempting to generate public token for viewing...");
+                const tokenGenerated = await generatePublicTokenOnLoad();
+                if (tokenGenerated && userToken) {
+                  viewingToken = userToken;
+                  console.log("Generated new public token for viewing existing requests");
                 }
               }
             } catch (error) {
