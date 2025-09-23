@@ -2770,21 +2770,9 @@
         console.log("🌐 Current domain:", window.location.hostname);
         console.log("🔑 Site key:", RECAPTCHA_SITE_KEY);
         
-        // Start with invisible reCAPTCHA for step transition
+        // Render visible reCAPTCHA for form submission FIRST
         try {
-          console.log("🔄 Rendering invisible reCAPTCHA...");
-          invisibleRecaptchaId = grecaptcha.render('invisible-recaptcha', {
-            'sitekey': RECAPTCHA_SITE_KEY,
-            'size': 'invisible',
-            'callback': onInvisibleRecaptchaSuccess,
-            'expired-callback': onInvisibleRecaptchaExpired,
-            'error-callback': onInvisibleRecaptchaError
-          });
-          
-          console.log("✅ Invisible reCAPTCHA widget loaded - ID:", invisibleRecaptchaId);
-          
-          // Render visible reCAPTCHA for form submission  
-          console.log("🔄 Rendering visible reCAPTCHA...");
+          console.log("🔄 Rendering visible reCAPTCHA first...");
           visibleRecaptchaId = grecaptcha.render('visible-recaptcha', {
             'sitekey': RECAPTCHA_SITE_KEY,
             'callback': onRecaptchaSuccess,
@@ -2794,9 +2782,19 @@
           
           console.log("✅ Visible reCAPTCHA widget loaded - ID:", visibleRecaptchaId);
           
+          // Now try invisible reCAPTCHA with minimal config
+          console.log("🔄 Rendering invisible reCAPTCHA...");
+          invisibleRecaptchaId = grecaptcha.render('invisible-recaptcha', {
+            'sitekey': RECAPTCHA_SITE_KEY,
+            'size': 'invisible',
+            'callback': onInvisibleRecaptchaSuccess
+          });
+          
+          console.log("✅ Invisible reCAPTCHA widget loaded - ID:", invisibleRecaptchaId);
+          
         } catch (error) {
           console.error("❌ Failed to load reCAPTCHA widgets:", error);
-          console.error("🔍 This might be a domain authorization issue");
+          console.error("🔍 This might be a widget configuration issue");
         }
       };
       
@@ -2825,20 +2823,7 @@
         });
       };
       
-      window.onInvisibleRecaptchaExpired = function() {
-        console.log("❌ Invisible reCAPTCHA expired");
-        clearRecaptchaToken();
-      };
-      
-      window.onInvisibleRecaptchaError = function(error) {
-        console.error("❌ CRITICAL: Invisible reCAPTCHA error occurred:", error);
-        console.error("🚨 This must be fixed - invisible reCAPTCHA is required for queryreport access");
-        console.error("🔍 Check domain configuration in Google reCAPTCHA console");
-        console.error("🔍 Ensure og-jcr.github.io is added to authorized domains");
-        
-        // Don't disable - this must work
-        alert("reCAPTCHA configuration error. Please check the console for details.");
-      };
+      // Simplified invisible reCAPTCHA callbacks (removed error/expired for testing)
       
       // Visible reCAPTCHA callbacks (for form submission)
       window.onRecaptchaSuccess = function(token) {
