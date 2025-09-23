@@ -2688,9 +2688,7 @@
           // Override any existing interceptors
           esriConfig.request.interceptors = [];
           
-          console.log("Maximum permissive ESRI configuration applied");
         } catch (error) {
-          console.warn("ESRI configuration warning:", error);
         }
         
         // Browser-specific configuration for maximum compatibility
@@ -2699,10 +2697,8 @@
           esriConfig.request.corsDetection = false;
           esriConfig.request.trustedServers = ["*"];
           esriConfig.request.interceptors = [];
-          console.log("Browser-specific ESRI configuration applied for:", userAgent.indexOf('firefox') > -1 ? 'Firefox' : userAgent.indexOf('safari') > -1 ? 'Safari' : 'Mobile');
         }
         
-        console.log("ESRI Configuration completed with CORS settings");
       });
       const SERVER_URL_PAGE = "https://api.ignatius.io";
       const PUBLIC_REQUESTS_TABLEKEY = "msfxaraq3"; // Public Requests Table
@@ -2713,7 +2709,6 @@
         try {
           localStorage.removeItem("token");
           localStorage.removeItem("UserName");
-          console.log("Cleared stored authentication tokens");
         } catch (error) {
           console.error("Error clearing tokens:", error);
         }
@@ -2731,13 +2726,11 @@
             
             // Validate token format (should be JWT)
             if (token && token.split('.').length !== 3) {
-              console.warn("Invalid token format, clearing...");
               clearStoredTokens();
               return { token: null, email: null };
             }
           }
         } catch (error) {
-          console.warn("Error decrypting token, clearing stored data:", error);
           clearStoredTokens();
           return { token: null, email: null };
         }
@@ -2748,7 +2741,6 @@
             email = CryptoJS.AES.decrypt(encryptedUserName, aesKEY).toString(CryptoJS.enc.Utf8);
           }
         } catch (error) {
-          console.warn("Error decrypting username, clearing stored data:", error);
           clearStoredTokens();
           return { token: null, email: null };
         }
@@ -2849,8 +2841,6 @@
       
       // Invisible reCAPTCHA callbacks (for step transition)
       window.onInvisibleRecaptchaSuccess = function(token) {
-        console.log("✅ Invisible reCAPTCHA completed for step transition");
-        console.log("📏 Invisible token length:", token ? token.length : 0, "characters");
         
         // Store the invisible reCAPTCHA token
         setRecaptchaToken(token);
@@ -2858,7 +2848,6 @@
         // Generate API token for queryreport access
         generatePublicTokenWithRecaptcha(token).then(success => {
           if (success) {
-            console.log("🗺️ Step transition token generated - queryreport access enabled");
             // Now show step 2 with map data access and render visible reCAPTCHA
             showStep2();
             // Render visible reCAPTCHA for form submission
@@ -2866,11 +2855,11 @@
               renderVisibleRecaptcha();
             }, 500); // Small delay to ensure step 2 is fully shown
           } else {
-            console.error("❌ Failed to generate step transition token");
+            console.error("Failed to generate step transition token");
             alert("Failed to authenticate for map data access. Please try again.");
           }
         }).catch(error => {
-          console.error("❌ Error in step transition token generation:", error);
+          console.error("Error in step transition token generation:", error);
           alert("Failed to authenticate for map data access. Please try again.");
           showStep2(); // Show step 2 anyway to not block user
           setTimeout(() => {
@@ -2879,7 +2868,6 @@
         });
       };
       
-      // Simplified invisible reCAPTCHA callbacks (removed error/expired for testing)
       
       // Visible reCAPTCHA callbacks (for form submission)
       window.onRecaptchaSuccess = function(token) {
@@ -2912,7 +2900,6 @@
       }
       
       
-      // reCAPTCHA v3 doesn't need callback functions - tokens are generated on demand
       
       // Function to generate public token immediately on page load (without reCAPTCHA)
       async function generatePublicTokenOnLoad() {
@@ -2947,7 +2934,6 @@
       async function generatePublicTokenWithRecaptcha(recaptchaToken) {
         try {
           
-          // Build the URL like the working example (with proper encoding)
           const encodedToken = encodeURIComponent(recaptchaToken);
           const url = `https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${encodedToken}`;
           
@@ -2981,7 +2967,6 @@
         }
       }
       
-      // reCAPTCHA v3 doesn't have expired/error callbacks like v2
       
       // Function to enable submit button
       function enableSubmitButton() {
@@ -3065,7 +3050,6 @@
       function setRecaptchaToken(token) {
         recaptchaToken = token;
         recaptchaTokenTimestamp = Date.now();
-        console.log("🤖 reCAPTCHA token stored, expires in 2 minutes");
       }
       
       function setApiAccessToken(token) {
@@ -3073,41 +3057,33 @@
         apiAccessTokenTimestamp = Date.now();
         // Also update the legacy userToken for backward compatibility
         userToken = token;
-        console.log("🔐 API access token stored, expires in 12 hours");
       }
       
       function clearRecaptchaToken() {
         recaptchaToken = null;
         recaptchaTokenTimestamp = null;
-        console.log("🤖 reCAPTCHA token cleared");
       }
       
       function clearApiAccessToken() {
         apiAccessToken = null;
         apiAccessTokenTimestamp = null;
         userToken = null;
-        console.log("🔐 API access token cleared");
       }
       
       // Smart token management - ensures we have valid tokens when needed
       async function ensureValidTokens() {
-        console.log("🔍 Checking token validity...");
         
         // Check if API token is still valid
         if (isApiTokenValid()) {
-          console.log("✅ API token is still valid");
           return true;
         }
         
-        console.log("⚠️ API token expired or missing, need to refresh");
         
         // Check if we have a valid reCAPTCHA token to refresh API token
         if (isRecaptchaTokenValid()) {
-          console.log("🤖 Using existing reCAPTCHA token to refresh API token");
           return await generatePublicTokenWithRecaptcha(recaptchaToken);
         }
         
-        console.log("❌ reCAPTCHA token also expired - need fresh reCAPTCHA challenge");
         
         // Need fresh reCAPTCHA - trigger new challenge
         try {
@@ -3148,7 +3124,6 @@
           // For initial authentication (viewing), try to generate token without reCAPTCHA
           const tokenGenerated = await generatePublicTokenOnLoad();
           if (tokenGenerated) {
-            console.log("Anonymous user authenticated successfully with public token");
             return true;
           }
           
@@ -3163,7 +3138,6 @@
       // Fallback authentication without reCAPTCHA (for initial page load)
       async function authenticateWithoutRecaptcha() {
         try {
-          console.log("Attempting fallback authentication for initial page load...");
           
           // Check if we have a valid stored token first
           const storedToken = localStorage.getItem("token");
@@ -3176,17 +3150,14 @@
                 if (storedEmail) {
                   userEmail = CryptoJS.AES.decrypt(storedEmail, aesKEY).toString(CryptoJS.enc.Utf8);
                 }
-                console.log("Using valid stored token for fallback authentication");
                 return true;
               }
             } catch (error) {
-              console.log("Stored token invalid or expired");
             }
           }
           
           // Set minimal user info for public access
           userEmail = PUBLIC_USER_EMAIL;
-          console.log("Fallback authentication set for public viewing");
           return false; // No token available, but user info is set
         } catch (error) {
           console.error("Fallback authentication failed:", error);
@@ -3205,7 +3176,6 @@
           if (tokenParts.length === 5) {
             // This is a JWE token - we can't decode it client-side
             // For now, assume it's valid if it exists and is recent
-            console.log("JWE token detected - assuming valid");
             return false;
           } else if (tokenParts.length === 3) {
             // This is a regular JWT token
@@ -3214,17 +3184,14 @@
             
             // Check if token has expiration and if it's expired
             if (payload.exp && payload.exp < currentTime) {
-              console.log("Token expired at:", new Date(payload.exp * 1000));
               return true;
             }
             
             return false;
           } else {
-            console.warn("Invalid token format - expected 3 or 5 parts, got:", tokenParts.length);
             return true;
           }
         } catch (error) {
-          console.warn("Could not decode token, treating as expired:", error);
           return true;
         }
       }
@@ -3244,13 +3211,10 @@
 
         // Token is missing, expired, or invalid - clear and re-authenticate
         if (currentToken && isTokenExpired(currentToken)) {
-          console.log("Token expired, clearing cache and re-authenticating...");
           clearStoredTokens();
         } else if (currentToken) {
-          console.log("Invalid token found, clearing cache and re-authenticating...");
           clearStoredTokens();
         } else {
-          console.log("No authentication found, attempting anonymous authentication...");
         }
         
         return await authenticateAnonymousUser();
@@ -3259,14 +3223,12 @@
       // Function to create 311 service request record
       async function createServiceRequest(serviceRequestData) {
         // Use smart token management to ensure we have valid tokens
-        console.log("🚀 Starting service request submission...");
         
         const tokensValid = await ensureValidTokens();
         if (!tokensValid) {
           throw new Error("Unable to authenticate user. Please complete the reCAPTCHA and try again.");
         }
         
-        console.log("✅ Authentication confirmed - proceeding with submission");
 
         // Create fieldsList array for API submission
         const fieldsList = [
@@ -4185,17 +4147,14 @@
             selectedRequestType = requestType;
             
             // Check if step transition reCAPTCHA was completed
-            console.log("🤖 Checking step transition reCAPTCHA completion...");
             
             if (userToken) {
-              console.log("✅ Step transition reCAPTCHA already completed - proceeding to Step 2");
               showStep2();
               // Render form submission reCAPTCHA
               setTimeout(() => {
                 renderFormSubmissionRecaptcha();
               }, 500);
             } else {
-              console.log("❌ Please complete the reCAPTCHA verification above first");
               showError('Please complete the security verification above to continue.');
             }
           } catch (error) {
@@ -4481,14 +4440,11 @@
         // Initialize authentication for public forms
         async function initializePublicForm() {
           try {
-            console.log("Initializing public form with early token generation...");
             
             // Try to generate public token immediately on page load
             const tokenGenerated = await generatePublicTokenOnLoad();
             if (tokenGenerated) {
-              console.log("Public form initialized with access token - ready for viewing and submission");
             } else {
-              console.log("Public form initialized - token will be generated when needed");
             }
           } catch (error) {
             console.error("Failed to initialize public form authentication:", error);
@@ -4561,21 +4517,18 @@
                   layers: [cityBoundaryLayer]
                 });
               } catch (error) {
-                console.warn("Primary basemap failed, trying fallback:", error);
                 try {
                   map = new Map({
                     basemap: "streets", // Fallback 1: Basic streets
                     layers: [cityBoundaryLayer]
                   });
                 } catch (error2) {
-                  console.warn("Fallback 1 failed, trying fallback 2:", error2);
                   try {
                     map = new Map({
                       basemap: "gray", // Fallback 2: Gray basemap
                       layers: [cityBoundaryLayer]
                     });
                   } catch (error3) {
-                    console.warn("All basemaps failed, using minimal map:", error3);
                     map = new Map({
                       layers: [cityBoundaryLayer] // Minimal: No basemap
                     });
@@ -4725,17 +4678,14 @@
         // Function to load existing service requests and display them on the map
         async function loadExistingServiceRequests() {
           if (!esriMapView) {
-            console.log("Cannot load existing requests: map view not ready");
             return;
           }
 
-          console.log("Attempting to load existing service requests for map display...");
           
           // Try to get a token for viewing existing requests
           let viewingToken = userToken;
           
           if (!viewingToken) {
-            console.log("No token available, attempting to get viewing token...");
             try {
               // Try to get a token from localStorage first
               const storedToken = localStorage.getItem("token");
@@ -4743,30 +4693,23 @@
                 try {
                   viewingToken = CryptoJS.AES.decrypt(storedToken, aesKEY).toString(CryptoJS.enc.Utf8);
                   if (viewingToken && !isTokenExpired(viewingToken)) {
-                    console.log("Using stored token for viewing existing requests");
                   } else {
-                    console.log("Stored token expired, clearing...");
                     viewingToken = null;
                   }
                 } catch (error) {
-                  console.log("Stored token invalid, clearing...");
                   viewingToken = null;
                 }
               }
               
           // If no valid stored token, try to generate one
           if (!viewingToken) {
-            console.log("No stored token available, attempting to generate public token for viewing...");
-            console.log("🚨 WARNING: This should not happen if invisible reCAPTCHA worked properly");
             
             const tokenGenerated = await generatePublicTokenOnLoad();
             if (tokenGenerated && userToken) {
               viewingToken = userToken;
-              console.log("Generated new public token for viewing existing requests");
             }
           }
         } catch (error) {
-          console.log("Could not retrieve or generate viewing token:", error);
         }
       }
 
@@ -4780,16 +4723,12 @@
             }),
             timeout: 15000,
             success: function (response) {
-              console.log("Existing service requests loaded:", response?.length || 0, "requests");
               if (Array.isArray(response) && response.length > 0) {
                 addExistingRequestsToMap(response);
               } else {
-                console.log("No existing service requests found or empty response");
               }
             },
             error: function (xhr, status, error) {
-              console.log("Could not load existing service requests:", error);
-              console.log("This is normal for public forms - continuing without existing data");
             }
           };
           
@@ -4798,9 +4737,7 @@
             ajaxConfig.beforeSend = function (xhr) {
               xhr.setRequestHeader("Authorization", `Bearer ${viewingToken}`);
             };
-            console.log("Making authenticated request for existing service requests");
           } else {
-            console.log("Making unauthenticated request for existing service requests");
           }
           
           $.ajax(ajaxConfig);
@@ -5720,7 +5657,6 @@
                   </button>
                 `;
               } else {
-                console.warn('Invalid file URL for preview:', fileObj);
               }
             } else if (fileObj.url && fileObj.url !== 'undefined') {
               let fileIcon = "bi-file-earmark";
@@ -5922,7 +5858,6 @@
                 }
               })
               .catch(error => {
-                console.error('Address geocoding error:', error);
                 const addressInput = document.getElementById('addressSearch');
                 if (addressInput) {
                   addressInput.placeholder = 'Error finding address. Please try again...';
@@ -6406,15 +6341,10 @@
 
           try {
             // Check if form submission reCAPTCHA is completed
-            console.log("🔍 Form submission validation:");
-            console.log("📋 grecaptcha available:", typeof grecaptcha !== 'undefined');
-            console.log("📋 formSubmissionRecaptchaId:", formSubmissionRecaptchaId);
             
             const recaptchaResponse = formSubmissionRecaptchaId ? grecaptcha.getResponse(formSubmissionRecaptchaId) : null;
-            console.log("📋 reCAPTCHA response:", recaptchaResponse ? recaptchaResponse.substring(0, 50) + "..." : "null");
             
             if (typeof grecaptcha === 'undefined' || !formSubmissionRecaptchaId || !recaptchaResponse) {
-              console.log("❌ Form submission reCAPTCHA validation failed");
               errorMessage.style.display = "block";
               errorMessage.innerHTML = `
                 <i class="bi bi-exclamation-triangle me-2"></i>
@@ -6424,7 +6354,6 @@
               return false;
             }
             
-            console.log("✅ Form submission reCAPTCHA validation passed");
             
             if (!isLocationValid || !selectedCoordinates || 
                 selectedCoordinates.latitude === 0 || selectedCoordinates.longitude === 0 ||
