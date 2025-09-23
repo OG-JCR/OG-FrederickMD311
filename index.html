@@ -2845,9 +2845,21 @@
       // Visible reCAPTCHA callback functions (for form submission)
       window.onRecaptchaSuccess = function(token) {
         console.log("Visible reCAPTCHA completed successfully for form submission");
+        console.log("reCAPTCHA token received:", token ? token.substring(0, 50) + "..." : "null");
+        console.log("reCAPTCHA token length:", token ? token.length : 0);
+        
         enableSubmitButton();
+        
         // Generate public token immediately when reCAPTCHA is completed
-        generatePublicTokenWithRecaptcha(token);
+        generatePublicTokenWithRecaptcha(token).then(success => {
+          if (success) {
+            console.log("✅ Authentication token generated successfully from visible reCAPTCHA");
+          } else {
+            console.error("❌ Failed to generate authentication token from visible reCAPTCHA");
+          }
+        }).catch(error => {
+          console.error("❌ Error generating authentication token:", error);
+        });
       };
       
       // Function to generate public token immediately on page load (without reCAPTCHA)
@@ -2891,8 +2903,13 @@
       // Function to generate public token with reCAPTCHA (for form submission)
       async function generatePublicTokenWithRecaptcha(recaptchaToken) {
         try {
-          console.log("Generating public token with reCAPTCHA for form submission...");
+          console.log("🔄 Generating public token with reCAPTCHA for form submission...");
+          console.log("📝 reCAPTCHA token:", recaptchaToken ? recaptchaToken.substring(0, 50) + "..." : "null");
+          console.log("🔗 API URL:", `https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${recaptchaToken ? recaptchaToken.substring(0, 20) + "..." : "null"}`);
+          
           const response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${recaptchaToken}`);
+          
+          console.log("📡 API Response:", response);
           
           if (response && response.access_token) {
             // Store the token and user info
@@ -2906,19 +2923,27 @@
             userToken = response.access_token;
             userEmail = PUBLIC_USER_EMAIL;
 
-            console.log("Public token generated with reCAPTCHA - now available for viewing and submission");
+            console.log("✅ Public token generated with reCAPTCHA - now available for viewing and submission");
+            console.log("🔑 Token stored and global variables updated");
             
             // If map is already loaded, try to load existing requests now
             if (esriMapView) {
-              console.log("Map is ready, attempting to load existing requests with new token...");
+              console.log("🗺️ Map is ready, attempting to load existing requests with new token...");
               loadExistingServiceRequests();
             }
             
             return true;
+          } else {
+            console.error("❌ No access_token in response:", response);
+            return false;
           }
-          return false;
         } catch (error) {
-          console.log("Could not generate public token with reCAPTCHA:", error);
+          console.error("❌ Could not generate public token with reCAPTCHA:", error);
+          console.error("📊 Error details:", {
+            status: error.status,
+            statusText: error.statusText,
+            responseText: error.responseText
+          });
           return false;
         }
       }
