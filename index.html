@@ -35,7 +35,7 @@
     <!-- ESRI ArcGIS API CSS -->
     <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
     <!-- Google reCAPTCHA v2 (like working example) -->
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit" async defer></script>
     <style>
       /* Frederick, MD Theme Variables */
       :root {
@@ -2512,25 +2512,11 @@
           <!-- reCAPTCHA v2 Section (like working example) -->
           <div class="form-section">
             <!-- Visible reCAPTCHA for form submission -->
-            <div class="g-recaptcha" 
-                 id="visible-recaptcha"
-                 data-sitekey="6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj"
-                 data-callback="onRecaptchaSuccess"
-                 data-expired-callback="onRecaptchaExpired"
-                 data-error-callback="onRecaptchaError">
-            </div>
+            <div id="visible-recaptcha"></div>
           </div>
           
           <!-- Invisible reCAPTCHA for step transition (hidden) -->
-          <div class="g-recaptcha" 
-               id="invisible-recaptcha"
-               data-sitekey="6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj"
-               data-size="invisible"
-               data-callback="onInvisibleRecaptchaSuccess"
-               data-expired-callback="onInvisibleRecaptchaExpired"
-               data-error-callback="onInvisibleRecaptchaError"
-               style="display: none;">
-          </div>
+          <div id="invisible-recaptcha" style="display: none;"></div>
 
           <!-- Submit Section -->
           <div class="submit-section">
@@ -2773,7 +2759,33 @@
       // reCAPTCHA v2 configuration (like working example)
       const RECAPTCHA_SITE_KEY = "6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj";
       
-      // reCAPTCHA widgets will be automatically rendered by the g-recaptcha divs
+      // reCAPTCHA widget IDs for explicit rendering
+      let invisibleRecaptchaId = null;
+      let visibleRecaptchaId = null;
+      
+      // reCAPTCHA load callback - renders both widgets explicitly
+      window.onRecaptchaLoad = function() {
+        console.log("🤖 Loading reCAPTCHA widgets...");
+        
+        // Render invisible reCAPTCHA for step transition
+        invisibleRecaptchaId = grecaptcha.render('invisible-recaptcha', {
+          'sitekey': RECAPTCHA_SITE_KEY,
+          'size': 'invisible',
+          'callback': onInvisibleRecaptchaSuccess,
+          'expired-callback': onInvisibleRecaptchaExpired,
+          'error-callback': onInvisibleRecaptchaError
+        });
+        
+        // Render visible reCAPTCHA for form submission  
+        visibleRecaptchaId = grecaptcha.render('visible-recaptcha', {
+          'sitekey': RECAPTCHA_SITE_KEY,
+          'callback': onRecaptchaSuccess,
+          'expired-callback': onRecaptchaExpired,
+          'error-callback': onRecaptchaError
+        });
+        
+        console.log("✅ Both reCAPTCHA widgets loaded - Invisible ID:", invisibleRecaptchaId, "Visible ID:", visibleRecaptchaId);
+      };
       
       // Invisible reCAPTCHA callbacks (for step transition)
       window.onInvisibleRecaptchaSuccess = function(token) {
@@ -2839,8 +2851,8 @@
       
       // Execute visible reCAPTCHA v2 and get token (for form submission)
       async function executeRecaptcha() {
-        // Get response from the visible reCAPTCHA (first widget rendered)
-        const response = grecaptcha.getResponse();
+        // Get response from the specific visible reCAPTCHA widget
+        const response = grecaptcha.getResponse(visibleRecaptchaId);
         if (!response || response === "") {
           throw new Error("Please complete the reCAPTCHA verification.");
         }
@@ -4147,11 +4159,16 @@
             // Execute invisible reCAPTCHA for step transition
             console.log("🤖 Executing invisible reCAPTCHA for step transition...");
             try {
-              // Execute the invisible reCAPTCHA (it will find the invisible widget automatically)
-              grecaptcha.execute();
-              // Note: showStep2() will be called from onInvisibleRecaptchaSuccess callback
+              if (invisibleRecaptchaId !== null) {
+                // Execute the specific invisible reCAPTCHA widget
+                grecaptcha.execute(invisibleRecaptchaId);
+                // Note: showStep2() will be called from onInvisibleRecaptchaSuccess callback
+              } else {
+                console.log("❌ Invisible reCAPTCHA widget not loaded yet, proceeding without token");
+                showStep2();
+              }
             } catch (error) {
-              console.log("❌ Invisible reCAPTCHA not available, proceeding without token:", error);
+              console.log("❌ Error executing invisible reCAPTCHA, proceeding without token:", error);
               showStep2();
             }
           } catch (error) {
