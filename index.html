@@ -6458,8 +6458,16 @@
           e.preventDefault();
 
           try {
-            // Check if reCAPTCHA is completed
-            if (typeof grecaptcha === 'undefined' || !grecaptcha.getResponse()) {
+            // Check if form submission reCAPTCHA is completed
+            console.log("🔍 Form submission validation:");
+            console.log("📋 grecaptcha available:", typeof grecaptcha !== 'undefined');
+            console.log("📋 formSubmissionRecaptchaId:", formSubmissionRecaptchaId);
+            
+            const recaptchaResponse = formSubmissionRecaptchaId ? grecaptcha.getResponse(formSubmissionRecaptchaId) : null;
+            console.log("📋 reCAPTCHA response:", recaptchaResponse ? recaptchaResponse.substring(0, 50) + "..." : "null");
+            
+            if (typeof grecaptcha === 'undefined' || !formSubmissionRecaptchaId || !recaptchaResponse) {
+              console.log("❌ Form submission reCAPTCHA validation failed");
               errorMessage.style.display = "block";
               errorMessage.innerHTML = `
                 <i class="bi bi-exclamation-triangle me-2"></i>
@@ -6468,6 +6476,8 @@
               errorMessage.scrollIntoView({ behavior: "smooth" });
               return false;
             }
+            
+            console.log("✅ Form submission reCAPTCHA validation passed");
             
             if (!isLocationValid || !selectedCoordinates || 
                 selectedCoordinates.latitude === 0 || selectedCoordinates.longitude === 0 ||
