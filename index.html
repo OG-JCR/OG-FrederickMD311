@@ -2904,10 +2904,44 @@
       async function generatePublicTokenWithRecaptcha(recaptchaToken) {
         try {
           console.log("🔄 Generating public token with reCAPTCHA for form submission...");
-          console.log("📝 reCAPTCHA token:", recaptchaToken ? recaptchaToken.substring(0, 50) + "..." : "null");
-          console.log("🔗 API URL:", `https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${recaptchaToken ? recaptchaToken.substring(0, 20) + "..." : "null"}`);
+          console.log("📝 reCAPTCHA token length:", recaptchaToken ? recaptchaToken.length : 0, "characters");
           
-          const response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${recaptchaToken}`);
+          let response;
+          
+          // Try GET request first if token is reasonable length
+          if (recaptchaToken.length < 1200) {
+            console.log("🔗 Using GET request for reCAPTCHA token (length acceptable)");
+            try {
+              response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${encodeURIComponent(recaptchaToken)}`);
+              console.log("✅ GET request successful");
+            } catch (getError) {
+              console.log("❌ GET request failed, will try POST fallback:", getError.status);
+              response = null;
+            }
+          } else {
+            console.log("⚠️ reCAPTCHA token too long for GET (" + recaptchaToken.length + " chars), skipping to POST request");
+          }
+          
+          // Fallback to POST if GET failed or token too long
+          if (!response) {
+            console.log("🔄 Attempting POST request as fallback...");
+            try {
+              response = await $.ajax({
+                url: 'https://api.ignatius.io/api/user/publictoken',
+                type: 'POST',
+                contentType: 'application/x-www-form-urlencoded',
+                data: $.param({
+                  appId: APP_ID,
+                  token: recaptchaToken
+                }),
+                timeout: 10000
+              });
+              console.log("✅ POST request successful");
+            } catch (postError) {
+              console.error("❌ POST request also failed:", postError.status, postError.statusText);
+              throw new Error(`Unable to verify reCAPTCHA with backend (tried both GET and POST). Status: ${postError.status}`);
+            }
+          }
           
           console.log("📡 API Response:", response);
           
