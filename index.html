@@ -1857,17 +1857,23 @@
             </div>
           </div>
 
-          <!-- Hidden Step 1 reCAPTCHA for queryreport access -->
-          <div id="step-transition-recaptcha" style="display: none;"></div>
+          <!-- Step 1 reCAPTCHA for queryreport access -->
+          <div class="form-section" style="text-align: center; margin: 2rem 0;">
+            <div class="form-help" style="margin-bottom: 1rem;">
+              <i class="bi bi-shield-check"></i>
+              <span><strong>Security Verification:</strong> Please complete the security check below to access map data and continue to the next step.</span>
+            </div>
+            <div id="step-transition-recaptcha"></div>
+          </div>
 
           <div class="submit-section" style="display: flex; justify-content: center; flex-direction: column; align-items: center;">
-            <button type="submit" class="continue-button" id="continueButton">
+            <button type="submit" class="continue-button" id="continueButton" disabled>
               <i class="bi bi-arrow-right"></i>
               Continue to Details
             </button>
             <div class="form-help" style="max-width: 500px; margin: 0 auto;">
               <i class="bi bi-info-circle"></i>
-              <span>Security verification will be performed automatically when you continue.</span>
+              <span>Complete the security verification above to continue with your request.</span>
             </div>
           </div>
         </form>
@@ -2512,15 +2518,18 @@
             </div>
           </div>
 
-          <!-- Hidden reCAPTCHA for form submission -->
-          <div id="visible-recaptcha" style="display: none;"></div>
+          <!-- reCAPTCHA v2 Section (explicit rendering) -->
+          <div class="form-section">
+            <!-- Visible reCAPTCHA for form submission -->
+            <div id="visible-recaptcha"></div>
+          </div>
           
 
           <!-- Submit Section -->
           <div class="submit-section">
-            <button type="submit" class="submit-button" id="submitButton">
+            <button type="submit" class="submit-button" id="submitButton" disabled>
               <i class="bi bi-send"></i>
-              <span id="submitButtonText">Submit Request</span>
+              <span id="submitButtonText">Complete reCAPTCHA to Submit</span>
             </button>
 
             <div class="submit-help">
@@ -2808,13 +2817,6 @@
         generatePublicTokenWithRecaptcha(token).then(success => {
           if (success) {
             console.log("🗺️ Step transition token generated - queryreport access enabled");
-            
-            // Automatically proceed to Step 2
-            showStep2();
-            // Render form submission reCAPTCHA
-            setTimeout(() => {
-              renderFormSubmissionRecaptcha();
-            }, 500);
           } else {
             console.error("❌ Failed to generate step transition token");
           }
@@ -2898,7 +2900,7 @@
       
       // Visible reCAPTCHA callbacks (for form submission)
       window.onRecaptchaSuccess = function(token) {
-        console.log("✅ Form submission reCAPTCHA completed successfully");
+        console.log("✅ reCAPTCHA v2 completed successfully");
         console.log("📏 Token length:", token ? token.length : 0, "characters");
         console.log("🔍 Token preview:", token ? token.substring(0, 100) + "..." : "null");
         
@@ -2910,26 +2912,10 @@
           console.warn("⚠️ reCAPTCHA token is very long (" + token.length + " chars) - this may cause URL length issues");
         }
         
-        // Reset submit button
-        const submitButton = document.getElementById('submitButton');
-        const submitButtonText = document.getElementById('submitButtonText');
-        if (submitButton && submitButtonText) {
-          submitButton.disabled = false;
-          submitButtonText.textContent = 'Submit Request';
-        }
+        enableSubmitButton();
         
-        // Generate access token and then submit the form
-        generatePublicTokenWithRecaptcha(token).then(success => {
-          if (success) {
-            console.log("🚀 Form submission reCAPTCHA verified - proceeding with form submission");
-            // Trigger the actual form submission
-            createServiceRequest();
-          } else {
-            console.error("❌ Failed to generate token for form submission");
-          }
-        }).catch(error => {
-          console.error("❌ Error in form submission token generation:", error);
-        });
+        // Generate access token immediately (like working example)
+        generatePublicTokenWithRecaptcha(token);
       };
       
       window.onRecaptchaExpired = function() {
@@ -4250,10 +4236,9 @@
           try {
             selectedRequestType = requestType;
             
-            // Execute step transition reCAPTCHA automatically
-            console.log("🤖 Executing step transition reCAPTCHA automatically...");
+            // Check if step transition reCAPTCHA was completed
+            console.log("🤖 Checking step transition reCAPTCHA completion...");
             
-            // Check if step transition reCAPTCHA was already completed
             if (userToken) {
               console.log("✅ Step transition reCAPTCHA already completed - proceeding to Step 2");
               showStep2();
@@ -4262,28 +4247,14 @@
                 renderFormSubmissionRecaptcha();
               }, 500);
             } else {
-              // Execute step transition reCAPTCHA automatically
-              if (stepTransitionRecaptchaId !== null && typeof grecaptcha !== 'undefined') {
-                try {
-                  console.log("🔄 Executing step transition reCAPTCHA automatically...");
-                  continueButton.innerHTML = '<i class="bi bi-shield-check"></i> Verifying Security...';
-                  grecaptcha.execute(stepTransitionRecaptchaId);
-                  // The success callback will handle proceeding to Step 2
-                } catch (error) {
-                  console.error("❌ Error executing step transition reCAPTCHA:", error);
-                  showError('Security verification failed. Please try again.');
-                }
-              } else {
-                console.error("❌ Step transition reCAPTCHA not ready");
-                showError('Security verification is not ready. Please refresh the page and try again.');
-              }
+              console.log("❌ Please complete the reCAPTCHA verification above first");
+              showError('Please complete the security verification above to continue.');
             }
           } catch (error) {
             showError('There was an error processing your request. Please try again.');
           } finally {
-            // Don't reset button here - let the reCAPTCHA callback handle it
-            // continueButton.disabled = false;
-            // continueButton.innerHTML = '<i class="bi bi-arrow-right"></i> Continue to Details';
+            continueButton.disabled = false;
+            continueButton.innerHTML = '<i class="bi bi-arrow-right"></i> Continue to Details';
           }
         }
 
@@ -6486,62 +6457,26 @@
           e.preventDefault();
 
           try {
-            // Execute form submission reCAPTCHA automatically
-            console.log("🔍 Form submission - executing reCAPTCHA automatically:");
+            // Check if form submission reCAPTCHA is completed
+            console.log("🔍 Form submission validation:");
             console.log("📋 grecaptcha available:", typeof grecaptcha !== 'undefined');
             console.log("📋 formSubmissionRecaptchaId:", formSubmissionRecaptchaId);
             
-            // Check if reCAPTCHA was already completed recently
             const recaptchaResponse = formSubmissionRecaptchaId ? grecaptcha.getResponse(formSubmissionRecaptchaId) : null;
             console.log("📋 reCAPTCHA response:", recaptchaResponse ? recaptchaResponse.substring(0, 50) + "..." : "null");
             
-            if (recaptchaResponse) {
-              console.log("✅ Form submission reCAPTCHA already completed - proceeding with submission");
-              // Continue with form submission
-            } else {
-              // Execute form submission reCAPTCHA automatically
-              if (typeof grecaptcha !== 'undefined' && formSubmissionRecaptchaId !== null) {
-                console.log("🔄 Executing form submission reCAPTCHA automatically...");
-                
-                // Update submit button to show verification in progress
-                const submitButton = document.getElementById('submitButton');
-                const submitButtonText = document.getElementById('submitButtonText');
-                if (submitButton && submitButtonText) {
-                  submitButton.disabled = true;
-                  submitButtonText.textContent = 'Verifying Security...';
-                }
-                
-                try {
-                  grecaptcha.execute(formSubmissionRecaptchaId);
-                  // The success callback will handle the actual form submission
-                  return false; // Prevent form submission until reCAPTCHA completes
-                } catch (error) {
-                  console.error("❌ Error executing form submission reCAPTCHA:", error);
-                  errorMessage.style.display = "block";
-                  errorMessage.innerHTML = `
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    Security verification failed. Please try again.
-                  `;
-                  errorMessage.scrollIntoView({ behavior: "smooth" });
-                  
-                  // Reset submit button
-                  if (submitButton && submitButtonText) {
-                    submitButton.disabled = false;
-                    submitButtonText.textContent = 'Submit Request';
-                  }
-                  return false;
-                }
-              } else {
-                console.error("❌ Form submission reCAPTCHA not ready");
-                errorMessage.style.display = "block";
-                errorMessage.innerHTML = `
-                  <i class="bi bi-exclamation-triangle me-2"></i>
-                  Security verification is not ready. Please refresh the page and try again.
-                `;
-                errorMessage.scrollIntoView({ behavior: "smooth" });
-                return false;
-              }
+            if (typeof grecaptcha === 'undefined' || !formSubmissionRecaptchaId || !recaptchaResponse) {
+              console.log("❌ Form submission reCAPTCHA validation failed");
+              errorMessage.style.display = "block";
+              errorMessage.innerHTML = `
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Please complete the reCAPTCHA verification before submitting your request.
+              `;
+              errorMessage.scrollIntoView({ behavior: "smooth" });
+              return false;
             }
+            
+            console.log("✅ Form submission reCAPTCHA validation passed");
             
             if (!isLocationValid || !selectedCoordinates || 
                 selectedCoordinates.latitude === 0 || selectedCoordinates.longitude === 0 ||
