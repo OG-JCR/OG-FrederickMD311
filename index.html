@@ -2763,6 +2763,13 @@
       window.onRecaptchaSuccess = function(token) {
         console.log("✅ reCAPTCHA v2 completed successfully");
         console.log("📏 Token length:", token ? token.length : 0, "characters");
+        console.log("🔍 Token preview:", token ? token.substring(0, 100) + "..." : "null");
+        
+        // Check if token is too long for GET request
+        if (token && token.length > 2000) {
+          console.warn("⚠️ reCAPTCHA token is very long (" + token.length + " chars) - this may cause URL length issues");
+        }
+        
         enableSubmitButton();
         
         // Generate access token immediately (like working example)
@@ -2861,8 +2868,19 @@
           console.log("🔄 Generating public token with reCAPTCHA...");
           console.log("📏 Token length:", recaptchaToken ? recaptchaToken.length : 0, "characters");
           
+          // Build the URL like the working example (with proper encoding)
+          const encodedToken = encodeURIComponent(recaptchaToken);
+          const url = `https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${encodedToken}`;
+          console.log("🔗 Original token length:", recaptchaToken.length, "characters");
+          console.log("🔗 Encoded token length:", encodedToken.length, "characters");
+          console.log("🔗 Final URL length:", url.length, "characters");
+          
+          if (url.length > 2000) {
+            console.warn("⚠️ URL is very long (" + url.length + " chars) - may cause issues");
+          }
+          
           // Simple GET request like the working example
-          const response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${recaptchaToken}`);
+          const response = await $.get(url);
           
           console.log("📡 API Response:", response);
           
