@@ -2511,11 +2511,25 @@
 
           <!-- reCAPTCHA v2 Section (like working example) -->
           <div class="form-section">
+            <!-- Visible reCAPTCHA for form submission -->
             <div class="g-recaptcha" 
+                 id="visible-recaptcha"
                  data-sitekey="6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj"
                  data-callback="onRecaptchaSuccess"
                  data-expired-callback="onRecaptchaExpired"
-                 data-error-callback="onRecaptchaError"></div>
+                 data-error-callback="onRecaptchaError">
+            </div>
+          </div>
+          
+          <!-- Invisible reCAPTCHA for step transition (hidden) -->
+          <div class="g-recaptcha" 
+               id="invisible-recaptcha"
+               data-sitekey="6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj"
+               data-size="invisible"
+               data-callback="onInvisibleRecaptchaSuccess"
+               data-expired-callback="onInvisibleRecaptchaExpired"
+               data-error-callback="onInvisibleRecaptchaError"
+               style="display: none;">
           </div>
 
           <!-- Submit Section -->
@@ -2759,7 +2773,40 @@
       // reCAPTCHA v2 configuration (like working example)
       const RECAPTCHA_SITE_KEY = "6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj";
       
-      // Simple reCAPTCHA v2 callbacks (like working example)
+      // reCAPTCHA widgets will be automatically rendered by the g-recaptcha divs
+      
+      // Invisible reCAPTCHA callbacks (for step transition)
+      window.onInvisibleRecaptchaSuccess = function(token) {
+        console.log("✅ Invisible reCAPTCHA completed for step transition");
+        console.log("📏 Invisible token length:", token ? token.length : 0, "characters");
+        
+        // Store the invisible reCAPTCHA token
+        setRecaptchaToken(token);
+        
+        // Generate API token for queryreport access
+        generatePublicTokenWithRecaptcha(token).then(success => {
+          if (success) {
+            console.log("🗺️ Step transition token generated - queryreport access enabled");
+            // Now show step 2 with map data access
+            showStep2();
+          } else {
+            console.error("❌ Failed to generate step transition token");
+            alert("Failed to authenticate for map data access. Please try again.");
+          }
+        });
+      };
+      
+      window.onInvisibleRecaptchaExpired = function() {
+        console.log("❌ Invisible reCAPTCHA expired");
+        clearRecaptchaToken();
+      };
+      
+      window.onInvisibleRecaptchaError = function() {
+        console.log("❌ Invisible reCAPTCHA error occurred");
+        clearRecaptchaToken();
+      };
+      
+      // Visible reCAPTCHA callbacks (for form submission)
       window.onRecaptchaSuccess = function(token) {
         console.log("✅ reCAPTCHA v2 completed successfully");
         console.log("📏 Token length:", token ? token.length : 0, "characters");
@@ -2790,8 +2837,9 @@
         disableSubmitButton();
       };
       
-      // Execute reCAPTCHA v2 and get token (like working example)
+      // Execute visible reCAPTCHA v2 and get token (for form submission)
       async function executeRecaptcha() {
+        // Get response from the visible reCAPTCHA (first widget rendered)
         const response = grecaptcha.getResponse();
         if (!response || response === "") {
           throw new Error("Please complete the reCAPTCHA verification.");
@@ -2799,32 +2847,6 @@
         return response;
       }
       
-      // Invisible reCAPTCHA callback functions (TEMPORARILY COMMENTED OUT FOR TESTING)
-      /*
-      window.onInvisibleRecaptchaSuccess = function(token) {
-        console.log("Invisible reCAPTCHA completed successfully for step transition");
-        stepTransitionToken = token;
-        
-        // Generate public token for map data access
-        generatePublicTokenWithRecaptcha(token).then(success => {
-          if (success) {
-            console.log("Step transition token generated - map data access enabled");
-          } else {
-            console.warn("Failed to generate step transition token");
-          }
-        });
-      };
-      
-      window.onInvisibleRecaptchaExpired = function() {
-        console.log("Invisible reCAPTCHA expired");
-        stepTransitionToken = null;
-      };
-      
-      window.onInvisibleRecaptchaError = function() {
-        console.log("Invisible reCAPTCHA error occurred");
-        stepTransitionToken = null;
-      };
-      */
       
       // reCAPTCHA v3 doesn't need callback functions - tokens are generated on demand
       
@@ -4122,19 +4144,16 @@
           try {
             selectedRequestType = requestType;
             
-            // Execute invisible reCAPTCHA for step transition (TEMPORARILY COMMENTED OUT FOR TESTING)
-            /*
-            if (recaptchaLoaded && invisibleRecaptchaId !== null) {
-              console.log("Executing invisible reCAPTCHA for step transition...");
-              grecaptcha.execute(invisibleRecaptchaId);
-            } else {
-              console.log("Invisible reCAPTCHA not ready, proceeding without token (will retry later)");
+            // Execute invisible reCAPTCHA for step transition
+            console.log("🤖 Executing invisible reCAPTCHA for step transition...");
+            try {
+              // Execute the invisible reCAPTCHA (it will find the invisible widget automatically)
+              grecaptcha.execute();
+              // Note: showStep2() will be called from onInvisibleRecaptchaSuccess callback
+            } catch (error) {
+              console.log("❌ Invisible reCAPTCHA not available, proceeding without token:", error);
+              showStep2();
             }
-            */
-            console.log("Invisible reCAPTCHA temporarily disabled for testing");
-            
-            // Proceed to Step 2 (invisible reCAPTCHA will complete in background)
-            showStep2();
           } catch (error) {
             showError('There was an error processing your request. Please try again.');
           } finally {
