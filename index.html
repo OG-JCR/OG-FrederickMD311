@@ -2765,6 +2765,9 @@
         console.log("📏 Token length:", token ? token.length : 0, "characters");
         console.log("🔍 Token preview:", token ? token.substring(0, 100) + "..." : "null");
         
+        // Store the reCAPTCHA token with timestamp
+        setRecaptchaToken(token);
+        
         // Check if token is too long for GET request
         if (token && token.length > 2000) {
           console.warn("⚠️ reCAPTCHA token is very long (" + token.length + " chars) - this may cause URL length issues");
@@ -2778,6 +2781,7 @@
       
       window.onRecaptchaExpired = function() {
         console.log("❌ reCAPTCHA expired");
+        clearRecaptchaToken();
         disableSubmitButton();
       };
       
@@ -2892,8 +2896,8 @@
             const encryptedUserName = CryptoJS.AES.encrypt(PUBLIC_USER_EMAIL, aesKEY).toString();
             localStorage.setItem("UserName", encryptedUserName);
 
-            // Update global variables
-            userToken = response.access_token;
+            // Update global variables using new token management
+            setApiAccessToken(response.access_token);
             userEmail = PUBLIC_USER_EMAIL;
 
             console.log("✅ Public token generated successfully");
@@ -2968,6 +2972,94 @@
       // Declare as let so they can be reassigned during authentication
       let userToken = tokenData.token;
       let userEmail = tokenData.email;
+      
+      // Token management - separate tracking for different token types
+      let recaptchaToken = null;
+      let recaptchaTokenTimestamp = null;
+      let apiAccessToken = null;
+      let apiAccessTokenTimestamp = null;
+      
+      // Token expiration constants (in milliseconds)
+      const RECAPTCHA_TOKEN_LIFETIME = 2 * 60 * 1000; // 2 minutes
+      const API_TOKEN_LIFETIME = 12 * 60 * 60 * 1000; // 12 hours
+      
+      // Token management helper functions
+      function isRecaptchaTokenValid() {
+        if (!recaptchaToken || !recaptchaTokenTimestamp) {
+          return false;
+        }
+        const age = Date.now() - recaptchaTokenTimestamp;
+        return age < RECAPTCHA_TOKEN_LIFETIME;
+      }
+      
+      function isApiTokenValid() {
+        if (!apiAccessToken || !apiAccessTokenTimestamp) {
+          return false;
+        }
+        const age = Date.now() - apiAccessTokenTimestamp;
+        return age < API_TOKEN_LIFETIME;
+      }
+      
+      function setRecaptchaToken(token) {
+        recaptchaToken = token;
+        recaptchaTokenTimestamp = Date.now();
+        console.log("🤖 reCAPTCHA token stored, expires in 2 minutes");
+      }
+      
+      function setApiAccessToken(token) {
+        apiAccessToken = token;
+        apiAccessTokenTimestamp = Date.now();
+        // Also update the legacy userToken for backward compatibility
+        userToken = token;
+        console.log("🔐 API access token stored, expires in 12 hours");
+      }
+      
+      function clearRecaptchaToken() {
+        recaptchaToken = null;
+        recaptchaTokenTimestamp = null;
+        console.log("🤖 reCAPTCHA token cleared");
+      }
+      
+      function clearApiAccessToken() {
+        apiAccessToken = null;
+        apiAccessTokenTimestamp = null;
+        userToken = null;
+        console.log("🔐 API access token cleared");
+      }
+      
+      // Smart token management - ensures we have valid tokens when needed
+      async function ensureValidTokens() {
+        console.log("🔍 Checking token validity...");
+        
+        // Check if API token is still valid
+        if (isApiTokenValid()) {
+          console.log("✅ API token is still valid");
+          return true;
+        }
+        
+        console.log("⚠️ API token expired or missing, need to refresh");
+        
+        // Check if we have a valid reCAPTCHA token to refresh API token
+        if (isRecaptchaTokenValid()) {
+          console.log("🤖 Using existing reCAPTCHA token to refresh API token");
+          return await generatePublicTokenWithRecaptcha(recaptchaToken);
+        }
+        
+        console.log("❌ reCAPTCHA token also expired - need fresh reCAPTCHA challenge");
+        
+        // Need fresh reCAPTCHA - trigger new challenge
+        try {
+          const freshRecaptchaToken = await executeRecaptcha();
+          if (freshRecaptchaToken) {
+            setRecaptchaToken(freshRecaptchaToken);
+            return await generatePublicTokenWithRecaptcha(freshRecaptchaToken);
+          }
+        } catch (error) {
+          console.error("Failed to get fresh reCAPTCHA token:", error);
+        }
+        
+        return false;
+      }
 
       // Function to check if current user has anonymous role
       function isAnonymousUser() {
@@ -3104,24 +3196,15 @@
 
       // Function to create 311 service request record
       async function createServiceRequest(serviceRequestData) {
-        // Check if we already have a valid token from reCAPTCHA completion
-        if (userToken && !isTokenExpired(userToken)) {
-          console.log("Using existing token from reCAPTCHA completion for form submission");
-        } else {
-          // For form submission, we need reCAPTCHA verification
-          let recaptchaToken;
-          try {
-            recaptchaToken = await executeRecaptcha();
-          } catch (error) {
-            throw new Error("Please complete the reCAPTCHA verification before submitting.");
-          }
-          
-          // Generate fresh token with reCAPTCHA for form submission
-          const isAuthenticated = await authenticateAnonymousUser(recaptchaToken);
-          if (!isAuthenticated) {
-            throw new Error("Unable to authenticate user. Please complete the reCAPTCHA and try again.");
-          }
+        // Use smart token management to ensure we have valid tokens
+        console.log("🚀 Starting service request submission...");
+        
+        const tokensValid = await ensureValidTokens();
+        if (!tokensValid) {
+          throw new Error("Unable to authenticate user. Please complete the reCAPTCHA and try again.");
         }
+        
+        console.log("✅ Authentication confirmed - proceeding with submission");
 
         // Create fieldsList array for API submission
         const fieldsList = [
