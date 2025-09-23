@@ -34,8 +34,8 @@
     />
     <!-- ESRI ArcGIS API CSS -->
     <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
-    <!-- Google reCAPTCHA with explicit render -->
-    <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit" async defer></script>
+    <!-- Google reCAPTCHA v3 -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj"></script>
     <style>
       /* Frederick, MD Theme Variables */
       :root {
@@ -2509,17 +2509,17 @@
             </div>
           </div>
 
-          <!-- reCAPTCHA Section -->
+          <!-- reCAPTCHA v3 Section (Invisible) -->
           <div class="form-section">
-            <div id="visible-recaptcha" 
-                 data-sitekey="6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj"
-                 data-callback="onRecaptchaSuccess"
-                 data-expired-callback="onRecaptchaExpired"
-                 data-error-callback="onRecaptchaError"></div>
+            <div class="alert alert-info">
+              <i class="bi bi-shield-check me-2"></i>
+              <strong>Security Verification:</strong> This form is protected by reCAPTCHA v3. 
+              Verification happens automatically when you submit your request.
+              <br><small class="mt-1 d-block">This site is protected by reCAPTCHA and the Google 
+              <a href="https://policies.google.com/privacy" target="_blank">Privacy Policy</a> and 
+              <a href="https://policies.google.com/terms" target="_blank">Terms of Service</a> apply.</small>
+            </div>
           </div>
-          
-          <!-- Invisible reCAPTCHA for step transition (hidden) -->
-          <div id="invisible-recaptcha" style="display: none;"></div>
 
           <!-- Submit Section -->
           <div class="submit-section">
@@ -2759,60 +2759,45 @@
       const PUBLIC_USER_EMAIL = "public@ignatius.io";
       const APP_ID = "sxol7egq1";
       
-      // reCAPTCHA configuration
+      // reCAPTCHA v3 configuration
       const RECAPTCHA_SITE_KEY = "6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj";
       let recaptchaLoaded = false;
-      let invisibleRecaptchaId = null;
-      let visibleRecaptchaId = null;
-      let stepTransitionToken = null; // Token from invisible reCAPTCHA for map data
       
-      // Global callback when reCAPTCHA API loads
-      window.onRecaptchaLoad = function() {
-        console.log("reCAPTCHA API loaded, initializing widgets...");
-        
-        // Initialize invisible reCAPTCHA for step transitions (TEMPORARILY COMMENTED OUT FOR TESTING)
-        /*
-        invisibleRecaptchaId = grecaptcha.render('invisible-recaptcha', {
-          'sitekey': RECAPTCHA_SITE_KEY,
-          'size': 'invisible',
-          'callback': onInvisibleRecaptchaSuccess,
-          'expired-callback': onInvisibleRecaptchaExpired,
-          'error-callback': onInvisibleRecaptchaError
-        });
-        */
-        
-        // Initialize visible reCAPTCHA for form submission
-        visibleRecaptchaId = grecaptcha.render('visible-recaptcha', {
-          'sitekey': RECAPTCHA_SITE_KEY,
-          'callback': onRecaptchaSuccess,
-          'expired-callback': onRecaptchaExpired,
-          'error-callback': onRecaptchaError
-        });
-        
-        recaptchaLoaded = true;
-        console.log("Both reCAPTCHA widgets initialized successfully");
-        console.log("Invisible widget ID:", invisibleRecaptchaId);
-        console.log("Visible widget ID:", visibleRecaptchaId);
-      };
+      // Initialize reCAPTCHA v3 when ready
+      function initializeRecaptchaV3() {
+        if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
+          grecaptcha.ready(function() {
+            recaptchaLoaded = true;
+            console.log("✅ reCAPTCHA v3 initialized successfully");
+          });
+        } else {
+          // Retry after a short delay if reCAPTCHA isn't loaded yet
+          setTimeout(initializeRecaptchaV3, 1000);
+        }
+      }
       
-      // Execute reCAPTCHA and get token (for visible reCAPTCHA)
-      async function executeRecaptcha() {
-        if (!recaptchaLoaded || typeof grecaptcha === 'undefined' || visibleRecaptchaId === null) {
-          console.warn("Visible reCAPTCHA not loaded, cannot proceed without verification");
+      // Execute reCAPTCHA v3 and get token
+      async function executeRecaptchaV3(action = 'submit') {
+        if (!recaptchaLoaded || typeof grecaptcha === 'undefined') {
+          console.warn("reCAPTCHA v3 not loaded, cannot proceed without verification");
           throw new Error("reCAPTCHA verification is required. Please refresh the page and try again.");
         }
         
         try {
-          const response = grecaptcha.getResponse(visibleRecaptchaId);
-          if (!response) {
-            throw new Error("Please complete the reCAPTCHA verification.");
-          }
-          console.log("Visible reCAPTCHA token obtained for form submission");
-          return response;
+          console.log("🔄 Executing reCAPTCHA v3 for action:", action);
+          const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, {action: action});
+          console.log("✅ reCAPTCHA v3 token generated");
+          console.log("📏 Token length:", token ? token.length : 0, "characters");
+          return token;
         } catch (error) {
-          console.error("Visible reCAPTCHA execution failed:", error);
+          console.error("❌ reCAPTCHA v3 execution failed:", error);
           throw error;
         }
+      }
+      
+      // Execute reCAPTCHA and get token (now using v3)
+      async function executeRecaptcha() {
+        return await executeRecaptchaV3('submit');
       }
       
       // Invisible reCAPTCHA callback functions (TEMPORARILY COMMENTED OUT FOR TESTING)
@@ -2842,25 +2827,7 @@
       };
       */
       
-      // Visible reCAPTCHA callback functions (for form submission)
-      window.onRecaptchaSuccess = function(token) {
-        console.log("Visible reCAPTCHA completed successfully for form submission");
-        console.log("reCAPTCHA token received:", token ? token.substring(0, 50) + "..." : "null");
-        console.log("reCAPTCHA token length:", token ? token.length : 0);
-        
-        enableSubmitButton();
-        
-        // Generate public token immediately when reCAPTCHA is completed
-        generatePublicTokenWithRecaptcha(token).then(success => {
-          if (success) {
-            console.log("✅ Authentication token generated successfully from visible reCAPTCHA");
-          } else {
-            console.error("❌ Failed to generate authentication token from visible reCAPTCHA");
-          }
-        }).catch(error => {
-          console.error("❌ Error generating authentication token:", error);
-        });
-      };
+      // reCAPTCHA v3 doesn't need callback functions - tokens are generated on demand
       
       // Function to generate public token immediately on page load (without reCAPTCHA)
       async function generatePublicTokenOnLoad() {
@@ -2908,39 +2875,42 @@
           
           let response;
           
-          // Try GET request first if token is reasonable length
-          if (recaptchaToken.length < 1200) {
-            console.log("🔗 Using GET request for reCAPTCHA token (length acceptable)");
-            try {
-              response = await $.get(`https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${encodeURIComponent(recaptchaToken)}`);
-              console.log("✅ GET request successful");
-            } catch (getError) {
-              console.log("❌ GET request failed, will try POST fallback:", getError.status);
-              response = null;
-            }
-          } else {
-            console.log("⚠️ reCAPTCHA token too long for GET (" + recaptchaToken.length + " chars), skipping to POST request");
+          // For very long tokens, we need a different approach since both GET and POST have issues
+          if (recaptchaToken.length > 1500) {
+            console.log("⚠️ reCAPTCHA token extremely long (" + recaptchaToken.length + " chars)");
+            console.log("🔄 This may indicate reCAPTCHA v2 complexity - attempting GET with proper encoding...");
           }
           
-          // Fallback to POST if GET failed or token too long
-          if (!response) {
-            console.log("🔄 Attempting POST request as fallback...");
-            try {
-              response = await $.ajax({
-                url: 'https://api.ignatius.io/api/user/publictoken',
-                type: 'POST',
-                contentType: 'application/x-www-form-urlencoded',
-                data: $.param({
-                  appId: APP_ID,
-                  token: recaptchaToken
-                }),
-                timeout: 10000
-              });
-              console.log("✅ POST request successful");
-            } catch (postError) {
-              console.error("❌ POST request also failed:", postError.status, postError.statusText);
-              throw new Error(`Unable to verify reCAPTCHA with backend (tried both GET and POST). Status: ${postError.status}`);
+          // Try GET request with proper URL encoding
+          try {
+            console.log("🔗 Attempting GET request with URL encoding...");
+            const encodedToken = encodeURIComponent(recaptchaToken);
+            const url = `https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${encodedToken}`;
+            
+            // Log URL length for debugging
+            console.log("📏 Final URL length:", url.length, "characters");
+            
+            response = await $.ajax({
+              url: url,
+              type: 'GET',
+              timeout: 15000,
+              cache: false
+            });
+            console.log("✅ GET request successful");
+          } catch (getError) {
+            console.error("❌ GET request failed:", getError.status, getError.statusText);
+            console.log("📊 GET Error details:", {
+              status: getError.status,
+              statusText: getError.statusText,
+              responseText: getError.responseText ? getError.responseText.substring(0, 200) : 'No response text'
+            });
+            
+            // If the API doesn't support POST (405 Method Not Allowed), we're stuck with GET
+            if (getError.status === 405) {
+              throw new Error(`Backend API only supports GET requests, but token is too long. Consider switching to reCAPTCHA v3 for shorter tokens.`);
             }
+            
+            throw new Error(`Unable to verify reCAPTCHA with backend. Status: ${getError.status} - ${getError.statusText}`);
           }
           
           console.log("📡 API Response:", response);
@@ -2982,15 +2952,7 @@
         }
       }
       
-      window.onRecaptchaExpired = function() {
-        console.log("reCAPTCHA expired");
-        disableSubmitButton();
-      };
-      
-      window.onRecaptchaError = function() {
-        console.log("reCAPTCHA error occurred");
-        disableSubmitButton();
-      };
+      // reCAPTCHA v3 doesn't have expired/error callbacks like v2
       
       // Function to enable submit button
       function enableSubmitButton() {
@@ -3013,16 +2975,25 @@
           submitButton.disabled = true;
           submitButton.style.opacity = '0.6';
           submitButton.style.cursor = 'not-allowed';
-          submitButtonText.textContent = 'Complete reCAPTCHA to Submit';
+          submitButtonText.textContent = 'Preparing Security Verification...';
           submitButton.classList.add('disabled');
         }
       }
       
-      // reCAPTCHA will be initialized via onRecaptchaLoad callback when API loads
+      // Initialize reCAPTCHA v3 on page load
+      setTimeout(initializeRecaptchaV3, 2000);
       
-      // Ensure submit button is disabled on page load
+      // Enable submit button since reCAPTCHA v3 is invisible
       document.addEventListener('DOMContentLoaded', function() {
+        // Start with button disabled, enable after reCAPTCHA loads
         disableSubmitButton();
+        
+        // Enable button after reCAPTCHA v3 initializes
+        setTimeout(() => {
+          if (recaptchaLoaded) {
+            enableSubmitButton();
+          }
+        }, 3000);
       });
       
       // Check if app version has changed and clear cache if needed
