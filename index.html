@@ -2899,9 +2899,11 @@
             console.log("✅ Public token generated successfully");
             
             // If map is already loaded, try to load existing requests now
-            if (esriMapView) {
+            if (esriMapView && typeof loadExistingServiceRequests === 'function') {
               console.log("🗺️ Loading existing requests with new token...");
               loadExistingServiceRequests();
+            } else {
+              console.log("🗺️ Map not ready or loadExistingServiceRequests not available");
             }
             
             return true;
