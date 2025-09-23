@@ -2773,9 +2773,6 @@
       
       // reCAPTCHA load callback
       window.onRecaptchaLoad = function() {
-        console.log("🤖 reCAPTCHA API loaded");
-        console.log("🌐 Current domain:", window.location.hostname);
-        console.log("🔑 Site key:", RECAPTCHA_SITE_KEY);
         recaptchaReady = true;
         
         // Render step transition reCAPTCHA (for queryreport access)
@@ -2784,7 +2781,6 @@
       
       // Function to render step transition reCAPTCHA (visible checkbox for queryreport access)
       function renderStepTransitionRecaptcha() {
-        console.log("🔄 Rendering step transition reCAPTCHA for queryreport access...");
         try {
           stepTransitionRecaptchaId = grecaptcha.render('step-transition-recaptcha', {
             'sitekey': RECAPTCHA_SITE_KEY,
@@ -2792,17 +2788,13 @@
             'expired-callback': onStepTransitionRecaptchaExpired,
             'error-callback': onStepTransitionRecaptchaError
           });
-          console.log("✅ Step transition reCAPTCHA rendered - ID:", stepTransitionRecaptchaId);
         } catch (error) {
-          console.error("❌ Failed to render step transition reCAPTCHA:", error);
+          console.error("Failed to render step transition reCAPTCHA:", error);
         }
       }
       
       // Step transition reCAPTCHA callbacks (for queryreport access)
       window.onStepTransitionRecaptchaSuccess = function(token) {
-        console.log("✅ Step transition reCAPTCHA completed successfully");
-        console.log("📏 Token length:", token ? token.length : 0, "characters");
-        
         // Store the reCAPTCHA token
         setRecaptchaToken(token);
         
@@ -2814,19 +2806,12 @@
         }
         
         // Generate API token for queryreport access
-        generatePublicTokenWithRecaptcha(token).then(success => {
-          if (success) {
-            console.log("🗺️ Step transition token generated - queryreport access enabled");
-          } else {
-            console.error("❌ Failed to generate step transition token");
-          }
-        }).catch(error => {
-          console.error("❌ Error in step transition token generation:", error);
+        generatePublicTokenWithRecaptcha(token).catch(error => {
+          console.error("Failed to generate step transition token:", error);
         });
       };
       
       window.onStepTransitionRecaptchaExpired = function() {
-        console.log("❌ Step transition reCAPTCHA expired");
         const continueButton = document.getElementById('continueButton');
         if (continueButton) {
           continueButton.disabled = true;
@@ -2835,7 +2820,7 @@
       };
       
       window.onStepTransitionRecaptchaError = function(error) {
-        console.error("❌ Step transition reCAPTCHA error:", error);
+        console.error("Step transition reCAPTCHA error:", error);
         const continueButton = document.getElementById('continueButton');
         if (continueButton) {
           continueButton.disabled = true;
@@ -2845,7 +2830,6 @@
       
       // Function to render form submission reCAPTCHA (visible checkbox for form submission)
       function renderFormSubmissionRecaptcha() {
-        console.log("🔄 Rendering form submission reCAPTCHA...");
         try {
           formSubmissionRecaptchaId = grecaptcha.render('visible-recaptcha', {
             'sitekey': RECAPTCHA_SITE_KEY,
@@ -2853,9 +2837,8 @@
             'expired-callback': onRecaptchaExpired,
             'error-callback': onRecaptchaError
           });
-          console.log("✅ Form submission reCAPTCHA rendered - ID:", formSubmissionRecaptchaId);
         } catch (error) {
-          console.error("❌ Failed to render form submission reCAPTCHA:", error);
+          console.error("Failed to render form submission reCAPTCHA:", error);
         }
       }
       
@@ -2900,32 +2883,21 @@
       
       // Visible reCAPTCHA callbacks (for form submission)
       window.onRecaptchaSuccess = function(token) {
-        console.log("✅ reCAPTCHA v2 completed successfully");
-        console.log("📏 Token length:", token ? token.length : 0, "characters");
-        console.log("🔍 Token preview:", token ? token.substring(0, 100) + "..." : "null");
-        
         // Store the reCAPTCHA token with timestamp
         setRecaptchaToken(token);
         
-        // Check if token is too long for GET request
-        if (token && token.length > 2000) {
-          console.warn("⚠️ reCAPTCHA token is very long (" + token.length + " chars) - this may cause URL length issues");
-        }
-        
         enableSubmitButton();
         
-        // Generate access token immediately (like working example)
+        // Generate access token
         generatePublicTokenWithRecaptcha(token);
       };
       
       window.onRecaptchaExpired = function() {
-        console.log("❌ reCAPTCHA expired");
         clearRecaptchaToken();
         disableSubmitButton();
       };
       
       window.onRecaptchaError = function() {
-        console.log("❌ reCAPTCHA error occurred");
         disableSubmitButton();
       };
       
@@ -2945,11 +2917,6 @@
       // Function to generate public token immediately on page load (without reCAPTCHA)
       async function generatePublicTokenOnLoad() {
         try {
-          console.log("Generating public access token on page load...");
-          
-          // For the public token API, we need to check if it supports getting a token without reCAPTCHA
-          // If not, we'll need to use a different approach or endpoint
-          
           // First, try to use any existing valid token
           const storedToken = localStorage.getItem("token");
           if (storedToken) {
@@ -2961,21 +2928,17 @@
                 if (storedEmail) {
                   userEmail = CryptoJS.AES.decrypt(storedEmail, aesKEY).toString(CryptoJS.enc.Utf8);
                 }
-                console.log("Using existing valid public token");
                 return true;
               }
             } catch (error) {
-              console.log("Stored token invalid, will generate new one");
+              // Token invalid, continue
             }
           }
           
-          // Backend API requires reCAPTCHA token, so we can't generate without it
-          console.log("Backend requires reCAPTCHA token for public token generation");
-          console.log("Will wait for reCAPTCHA completion for token generation");
-          
+          // Backend requires reCAPTCHA for token generation
           return false;
         } catch (error) {
-          console.log("Error in generatePublicTokenOnLoad:", error);
+          console.error("Error in generatePublicTokenOnLoad:", error);
           return false;
         }
       }
@@ -2983,24 +2946,14 @@
       // Function to generate public token with reCAPTCHA (simplified like working example)
       async function generatePublicTokenWithRecaptcha(recaptchaToken) {
         try {
-          console.log("🔄 Generating public token with reCAPTCHA...");
-          console.log("📏 Token length:", recaptchaToken ? recaptchaToken.length : 0, "characters");
           
           // Build the URL like the working example (with proper encoding)
           const encodedToken = encodeURIComponent(recaptchaToken);
           const url = `https://api.ignatius.io/api/user/publictoken?appId=${APP_ID}&token=${encodedToken}`;
-          console.log("🔗 Original token length:", recaptchaToken.length, "characters");
-          console.log("🔗 Encoded token length:", encodedToken.length, "characters");
-          console.log("🔗 Final URL length:", url.length, "characters");
-          
-          if (url.length > 2000) {
-            console.warn("⚠️ URL is very long (" + url.length + " chars) - may cause issues");
-          }
           
           // Simple GET request like the working example
           const response = await $.get(url);
           
-          console.log("📡 API Response:", response);
           
           if (response && response.access_token) {
             // Store the token and user info
@@ -3014,21 +2967,16 @@
             setApiAccessToken(response.access_token);
             userEmail = PUBLIC_USER_EMAIL;
 
-            console.log("✅ Public token generated successfully");
-            
             // If map is already loaded, try to load existing requests now
             if (esriMapView && typeof loadExistingServiceRequests === 'function') {
-              console.log("🗺️ Loading existing requests with new token...");
               loadExistingServiceRequests();
-            } else {
-              console.log("🗺️ Map not ready or loadExistingServiceRequests not available");
             }
             
             return true;
           }
           return false;
         } catch (error) {
-          console.error("❌ Failed to generate public token:", error);
+          console.error("Failed to generate public token:", error);
           return false;
         }
       }
