@@ -2764,28 +2764,40 @@
       let visibleRecaptchaId = null;
       let invisibleRecaptchaFailed = false;
       
-      // reCAPTCHA load callback - renders both widgets explicitly
+      // reCAPTCHA load callback - render invisible widget first, then visible when needed
       window.onRecaptchaLoad = function() {
         console.log("🤖 Loading reCAPTCHA widgets...");
+        console.log("🌐 Current domain:", window.location.hostname);
+        console.log("🔑 Site key:", RECAPTCHA_SITE_KEY);
         
-        // Render invisible reCAPTCHA for step transition
-        invisibleRecaptchaId = grecaptcha.render('invisible-recaptcha', {
-          'sitekey': RECAPTCHA_SITE_KEY,
-          'size': 'invisible',
-          'callback': onInvisibleRecaptchaSuccess,
-          'expired-callback': onInvisibleRecaptchaExpired,
-          'error-callback': onInvisibleRecaptchaError
-        });
-        
-        // Render visible reCAPTCHA for form submission  
-        visibleRecaptchaId = grecaptcha.render('visible-recaptcha', {
-          'sitekey': RECAPTCHA_SITE_KEY,
-          'callback': onRecaptchaSuccess,
-          'expired-callback': onRecaptchaExpired,
-          'error-callback': onRecaptchaError
-        });
-        
-        console.log("✅ Both reCAPTCHA widgets loaded - Invisible ID:", invisibleRecaptchaId, "Visible ID:", visibleRecaptchaId);
+        // Start with invisible reCAPTCHA for step transition
+        try {
+          console.log("🔄 Rendering invisible reCAPTCHA...");
+          invisibleRecaptchaId = grecaptcha.render('invisible-recaptcha', {
+            'sitekey': RECAPTCHA_SITE_KEY,
+            'size': 'invisible',
+            'callback': onInvisibleRecaptchaSuccess,
+            'expired-callback': onInvisibleRecaptchaExpired,
+            'error-callback': onInvisibleRecaptchaError
+          });
+          
+          console.log("✅ Invisible reCAPTCHA widget loaded - ID:", invisibleRecaptchaId);
+          
+          // Render visible reCAPTCHA for form submission  
+          console.log("🔄 Rendering visible reCAPTCHA...");
+          visibleRecaptchaId = grecaptcha.render('visible-recaptcha', {
+            'sitekey': RECAPTCHA_SITE_KEY,
+            'callback': onRecaptchaSuccess,
+            'expired-callback': onRecaptchaExpired,
+            'error-callback': onRecaptchaError
+          });
+          
+          console.log("✅ Visible reCAPTCHA widget loaded - ID:", visibleRecaptchaId);
+          
+        } catch (error) {
+          console.error("❌ Failed to load reCAPTCHA widgets:", error);
+          console.error("🔍 This might be a domain authorization issue");
+        }
       };
       
       // Invisible reCAPTCHA callbacks (for step transition)
@@ -2819,11 +2831,13 @@
       };
       
       window.onInvisibleRecaptchaError = function(error) {
-        console.error("❌ Invisible reCAPTCHA error occurred:", error);
-        console.log("This might be due to domain restrictions or network issues");
-        console.log("🔄 Disabling invisible reCAPTCHA for this session");
-        invisibleRecaptchaFailed = true;
-        clearRecaptchaToken();
+        console.error("❌ CRITICAL: Invisible reCAPTCHA error occurred:", error);
+        console.error("🚨 This must be fixed - invisible reCAPTCHA is required for queryreport access");
+        console.error("🔍 Check domain configuration in Google reCAPTCHA console");
+        console.error("🔍 Ensure og-jcr.github.io is added to authorized domains");
+        
+        // Don't disable - this must work
+        alert("reCAPTCHA configuration error. Please check the console for details.");
       };
       
       // Visible reCAPTCHA callbacks (for form submission)
@@ -4167,13 +4181,6 @@
             // Execute invisible reCAPTCHA for step transition
             console.log("🤖 Executing invisible reCAPTCHA for step transition...");
             
-            // Check if invisible reCAPTCHA failed during loading
-            if (invisibleRecaptchaFailed) {
-              console.log("⚠️ Invisible reCAPTCHA disabled due to previous error, proceeding to step 2");
-              showStep2();
-              return;
-            }
-            
             if (invisibleRecaptchaId !== null) {
               try {
                 console.log("📋 Invisible widget ID:", invisibleRecaptchaId);
@@ -4767,19 +4774,21 @@
                 }
               }
               
-              // If no valid stored token, try to generate one without reCAPTCHA
-              if (!viewingToken) {
-                console.log("No stored token available, attempting to generate public token for viewing...");
-                const tokenGenerated = await generatePublicTokenOnLoad();
-                if (tokenGenerated && userToken) {
-                  viewingToken = userToken;
-                  console.log("Generated new public token for viewing existing requests");
-                }
-              }
-            } catch (error) {
-              console.log("Could not retrieve or generate viewing token:", error);
+          // If no valid stored token, try to generate one
+          if (!viewingToken) {
+            console.log("No stored token available, attempting to generate public token for viewing...");
+            console.log("🚨 WARNING: This should not happen if invisible reCAPTCHA worked properly");
+            
+            const tokenGenerated = await generatePublicTokenOnLoad();
+            if (tokenGenerated && userToken) {
+              viewingToken = userToken;
+              console.log("Generated new public token for viewing existing requests");
             }
           }
+        } catch (error) {
+          console.log("Could not retrieve or generate viewing token:", error);
+        }
+      }
 
           // Make API call to get existing service requests
           const ajaxConfig = {
