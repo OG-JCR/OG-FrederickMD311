@@ -34,8 +34,8 @@
     />
     <!-- ESRI ArcGIS API CSS -->
     <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
-    <!-- Google reCAPTCHA -->
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <!-- Google reCAPTCHA with explicit render -->
+    <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit" async defer></script>
     <style>
       /* Frederick, MD Theme Variables */
       :root {
@@ -2511,12 +2511,15 @@
 
           <!-- reCAPTCHA Section -->
           <div class="form-section">
-            <div class="g-recaptcha" 
+            <div id="visible-recaptcha" 
                  data-sitekey="6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj"
                  data-callback="onRecaptchaSuccess"
                  data-expired-callback="onRecaptchaExpired"
                  data-error-callback="onRecaptchaError"></div>
           </div>
+          
+          <!-- Invisible reCAPTCHA for step transition (hidden) -->
+          <div id="invisible-recaptcha" style="display: none;"></div>
 
           <!-- Submit Section -->
           <div class="submit-section">
@@ -2757,48 +2760,89 @@
       const APP_ID = "sxol7egq1";
       
       // reCAPTCHA configuration
-      const RECAPTCHA_SITE_KEY = "6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj"; // Using the same site key from reference
+      const RECAPTCHA_SITE_KEY = "6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj";
       let recaptchaLoaded = false;
+      let invisibleRecaptchaId = null;
+      let visibleRecaptchaId = null;
+      let stepTransitionToken = null; // Token from invisible reCAPTCHA for map data
       
-      // Initialize reCAPTCHA when ready
-      function initializeRecaptcha() {
-        if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
-          grecaptcha.ready(function() {
-            recaptchaLoaded = true;
-            console.log("reCAPTCHA initialized successfully");
-          });
-        } else {
-          // Retry after a short delay if reCAPTCHA isn't loaded yet
-          setTimeout(initializeRecaptcha, 1000);
-        }
-      }
+      // Global callback when reCAPTCHA API loads
+      window.onRecaptchaLoad = function() {
+        console.log("reCAPTCHA API loaded, initializing widgets...");
+        
+        // Initialize invisible reCAPTCHA for step transitions
+        invisibleRecaptchaId = grecaptcha.render('invisible-recaptcha', {
+          'sitekey': RECAPTCHA_SITE_KEY,
+          'size': 'invisible',
+          'callback': onInvisibleRecaptchaSuccess,
+          'expired-callback': onInvisibleRecaptchaExpired,
+          'error-callback': onInvisibleRecaptchaError
+        });
+        
+        // Initialize visible reCAPTCHA for form submission
+        visibleRecaptchaId = grecaptcha.render('visible-recaptcha', {
+          'sitekey': RECAPTCHA_SITE_KEY,
+          'callback': onRecaptchaSuccess,
+          'expired-callback': onRecaptchaExpired,
+          'error-callback': onRecaptchaError
+        });
+        
+        recaptchaLoaded = true;
+        console.log("Both reCAPTCHA widgets initialized successfully");
+        console.log("Invisible widget ID:", invisibleRecaptchaId);
+        console.log("Visible widget ID:", visibleRecaptchaId);
+      };
       
-      // Execute reCAPTCHA and get token
+      // Execute reCAPTCHA and get token (for visible reCAPTCHA)
       async function executeRecaptcha() {
-        if (!recaptchaLoaded || typeof grecaptcha === 'undefined') {
-          console.warn("reCAPTCHA not loaded, cannot proceed without verification");
+        if (!recaptchaLoaded || typeof grecaptcha === 'undefined' || visibleRecaptchaId === null) {
+          console.warn("Visible reCAPTCHA not loaded, cannot proceed without verification");
           throw new Error("reCAPTCHA verification is required. Please refresh the page and try again.");
         }
         
         try {
-          const response = grecaptcha.getResponse();
+          const response = grecaptcha.getResponse(visibleRecaptchaId);
           if (!response) {
             throw new Error("Please complete the reCAPTCHA verification.");
           }
-          console.log("reCAPTCHA token obtained");
+          console.log("Visible reCAPTCHA token obtained for form submission");
           return response;
         } catch (error) {
-          console.error("reCAPTCHA execution failed:", error);
+          console.error("Visible reCAPTCHA execution failed:", error);
           throw error;
         }
       }
       
-      // reCAPTCHA callback functions
+      // Invisible reCAPTCHA callback functions (for step transition)
+      window.onInvisibleRecaptchaSuccess = function(token) {
+        console.log("Invisible reCAPTCHA completed successfully for step transition");
+        stepTransitionToken = token;
+        
+        // Generate public token for map data access
+        generatePublicTokenWithRecaptcha(token).then(success => {
+          if (success) {
+            console.log("Step transition token generated - map data access enabled");
+          } else {
+            console.warn("Failed to generate step transition token");
+          }
+        });
+      };
+      
+      window.onInvisibleRecaptchaExpired = function() {
+        console.log("Invisible reCAPTCHA expired");
+        stepTransitionToken = null;
+      };
+      
+      window.onInvisibleRecaptchaError = function() {
+        console.log("Invisible reCAPTCHA error occurred");
+        stepTransitionToken = null;
+      };
+      
+      // Visible reCAPTCHA callback functions (for form submission)
       window.onRecaptchaSuccess = function(token) {
-        console.log("reCAPTCHA completed successfully");
+        console.log("Visible reCAPTCHA completed successfully for form submission");
         enableSubmitButton();
-        // Generate public token immediately when reCAPTCHA is completed
-        generatePublicTokenWithRecaptcha(token);
+        // This token will be used for final form submission
       };
       
       // Function to generate public token immediately on page load (without reCAPTCHA)
@@ -2910,8 +2954,7 @@
         }
       }
       
-      // Initialize reCAPTCHA on page load
-      setTimeout(initializeRecaptcha, 2000);
+      // reCAPTCHA will be initialized via onRecaptchaLoad callback when API loads
       
       // Ensure submit button is disabled on page load
       document.addEventListener('DOMContentLoaded', function() {
@@ -3999,6 +4042,16 @@
 
           try {
             selectedRequestType = requestType;
+            
+            // Execute invisible reCAPTCHA for step transition
+            if (recaptchaLoaded && invisibleRecaptchaId !== null) {
+              console.log("Executing invisible reCAPTCHA for step transition...");
+              grecaptcha.execute(invisibleRecaptchaId);
+            } else {
+              console.log("Invisible reCAPTCHA not ready, proceeding without token (will retry later)");
+            }
+            
+            // Proceed to Step 2 (invisible reCAPTCHA will complete in background)
             showStep2();
           } catch (error) {
             showError('There was an error processing your request. Please try again.');
