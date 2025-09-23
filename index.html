@@ -2781,13 +2781,35 @@
           currentRecaptchaId = grecaptcha.render('dynamic-recaptcha-container', {
             'sitekey': RECAPTCHA_SITE_KEY,
             'size': 'invisible',
-            'callback': onInvisibleRecaptchaSuccess
+            'callback': onInvisibleRecaptchaSuccess,
+            'expired-callback': onInvisibleRecaptchaExpired,
+            'error-callback': onInvisibleRecaptchaError
           });
           console.log("✅ Invisible reCAPTCHA rendered - ID:", currentRecaptchaId);
         } catch (error) {
           console.error("❌ Failed to render invisible reCAPTCHA:", error);
         }
       }
+      
+      // Add error and expired callbacks for invisible reCAPTCHA
+      window.onInvisibleRecaptchaExpired = function() {
+        console.log("❌ Invisible reCAPTCHA expired");
+        console.log("Proceeding to step 2 without token");
+        showStep2();
+        setTimeout(() => {
+          renderVisibleRecaptcha();
+        }, 500);
+      };
+      
+      window.onInvisibleRecaptchaError = function(error) {
+        console.error("❌ Invisible reCAPTCHA error:", error);
+        console.log("This might be a domain/configuration issue");
+        console.log("Proceeding to step 2 without token");
+        showStep2();
+        setTimeout(() => {
+          renderVisibleRecaptcha();
+        }, 500);
+      };
       
       // Function to render visible reCAPTCHA for form submission
       function renderVisibleRecaptcha() {
@@ -4190,7 +4212,20 @@
             if (recaptchaReady && currentRecaptchaId !== null) {
               try {
                 console.log("🤖 Executing invisible reCAPTCHA with ID:", currentRecaptchaId);
-                grecaptcha.execute(currentRecaptchaId);
+                
+                // Execute and handle promise rejection
+                const executePromise = grecaptcha.execute(currentRecaptchaId);
+                if (executePromise && typeof executePromise.catch === 'function') {
+                  executePromise.catch(error => {
+                    console.error("❌ Invisible reCAPTCHA execution promise rejected:", error);
+                    console.log("Proceeding to step 2 without authentication token");
+                    showStep2();
+                    setTimeout(() => {
+                      renderVisibleRecaptcha();
+                    }, 500);
+                  });
+                }
+                
                 console.log("✅ Invisible reCAPTCHA execution initiated");
                 
                 // Fallback timeout in case invisible reCAPTCHA doesn't respond
@@ -4199,6 +4234,9 @@
                   if (step1Element && step1Element.style.display !== 'none') {
                     console.log("⏰ Invisible reCAPTCHA timeout - proceeding to step 2");
                     showStep2();
+                    setTimeout(() => {
+                      renderVisibleRecaptcha();
+                    }, 500);
                   }
                 }, 5000);
                 
@@ -4206,10 +4244,16 @@
                 console.error("❌ Error executing invisible reCAPTCHA:", error);
                 console.log("Proceeding to step 2 without authentication token");
                 showStep2();
+                setTimeout(() => {
+                  renderVisibleRecaptcha();
+                }, 500);
               }
             } else {
               console.log("❌ reCAPTCHA not ready, proceeding without token");
               showStep2();
+              setTimeout(() => {
+                renderVisibleRecaptcha();
+              }, 500);
             }
           } catch (error) {
             showError('There was an error processing your request. Please try again.');
