@@ -2515,8 +2515,8 @@
             <div id="visible-recaptcha"></div>
           </div>
           
-          <!-- Invisible reCAPTCHA for step transition (explicit rendering) -->
-          <div id="invisible-recaptcha" style="display: none;"></div>
+          <!-- Dynamic reCAPTCHA container - will hold invisible OR visible widget -->
+          <div id="dynamic-recaptcha-container"></div>
 
           <!-- Submit Section -->
           <div class="submit-section">
@@ -2759,40 +2759,57 @@
       // reCAPTCHA v2 configuration (like working example)
       const RECAPTCHA_SITE_KEY = "6LftwGwaAAAAAIjIRFgI-UuqjtuaUJ3LXBFXTNBj";
       
-      // reCAPTCHA widget IDs - need explicit rendering to control which widget to execute
-      let invisibleRecaptchaId = null;
-      let visibleRecaptchaId = null;
+      // Single reCAPTCHA widget approach - render only one at a time
+      let currentRecaptchaId = null;
+      let recaptchaReady = false;
       
-      // reCAPTCHA load callback - render widgets explicitly to get IDs
+      // reCAPTCHA load callback
       window.onRecaptchaLoad = function() {
-        console.log("🤖 Loading reCAPTCHA widgets explicitly...");
+        console.log("🤖 reCAPTCHA API loaded");
         console.log("🌐 Current domain:", window.location.hostname);
         console.log("🔑 Site key:", RECAPTCHA_SITE_KEY);
+        recaptchaReady = true;
         
+        // Start with invisible reCAPTCHA for step transition
+        renderInvisibleRecaptcha();
+      };
+      
+      // Function to render invisible reCAPTCHA for step transition
+      function renderInvisibleRecaptcha() {
+        console.log("🔄 Rendering invisible reCAPTCHA for step transition...");
         try {
-          // Render invisible reCAPTCHA first to get its ID
-          console.log("🔄 Rendering invisible reCAPTCHA...");
-          invisibleRecaptchaId = grecaptcha.render('invisible-recaptcha', {
+          currentRecaptchaId = grecaptcha.render('dynamic-recaptcha-container', {
             'sitekey': RECAPTCHA_SITE_KEY,
             'size': 'invisible',
             'callback': onInvisibleRecaptchaSuccess
           });
-          console.log("✅ Invisible reCAPTCHA widget loaded - ID:", invisibleRecaptchaId);
+          console.log("✅ Invisible reCAPTCHA rendered - ID:", currentRecaptchaId);
+        } catch (error) {
+          console.error("❌ Failed to render invisible reCAPTCHA:", error);
+        }
+      }
+      
+      // Function to render visible reCAPTCHA for form submission
+      function renderVisibleRecaptcha() {
+        console.log("🔄 Rendering visible reCAPTCHA for form submission...");
+        try {
+          // Clear any existing widget
+          if (currentRecaptchaId !== null) {
+            grecaptcha.reset(currentRecaptchaId);
+          }
           
-          // Render visible reCAPTCHA
-          console.log("🔄 Rendering visible reCAPTCHA...");
-          visibleRecaptchaId = grecaptcha.render('visible-recaptcha', {
+          // Render visible reCAPTCHA in the form section
+          currentRecaptchaId = grecaptcha.render('visible-recaptcha', {
             'sitekey': RECAPTCHA_SITE_KEY,
             'callback': onRecaptchaSuccess,
             'expired-callback': onRecaptchaExpired,
             'error-callback': onRecaptchaError
           });
-          console.log("✅ Visible reCAPTCHA widget loaded - ID:", visibleRecaptchaId);
-          
+          console.log("✅ Visible reCAPTCHA rendered - ID:", currentRecaptchaId);
         } catch (error) {
-          console.error("❌ Failed to load reCAPTCHA widgets:", error);
+          console.error("❌ Failed to render visible reCAPTCHA:", error);
         }
-      };
+      }
       
       // Invisible reCAPTCHA callbacks (for step transition)
       window.onInvisibleRecaptchaSuccess = function(token) {
@@ -2806,8 +2823,12 @@
         generatePublicTokenWithRecaptcha(token).then(success => {
           if (success) {
             console.log("🗺️ Step transition token generated - queryreport access enabled");
-            // Now show step 2 with map data access
+            // Now show step 2 with map data access and render visible reCAPTCHA
             showStep2();
+            // Render visible reCAPTCHA for form submission
+            setTimeout(() => {
+              renderVisibleRecaptcha();
+            }, 500); // Small delay to ensure step 2 is fully shown
           } else {
             console.error("❌ Failed to generate step transition token");
             alert("Failed to authenticate for map data access. Please try again.");
@@ -2816,6 +2837,9 @@
           console.error("❌ Error in step transition token generation:", error);
           alert("Failed to authenticate for map data access. Please try again.");
           showStep2(); // Show step 2 anyway to not block user
+          setTimeout(() => {
+            renderVisibleRecaptcha();
+          }, 500);
         });
       };
       
@@ -2854,8 +2878,8 @@
       
       // Execute visible reCAPTCHA v2 and get token (for form submission)
       async function executeRecaptcha() {
-        // Get response from the visible reCAPTCHA using widget ID
-        const response = grecaptcha.getResponse(visibleRecaptchaId);
+        // Get response from the current reCAPTCHA widget (should be visible at this point)
+        const response = grecaptcha.getResponse(currentRecaptchaId);
         if (!response || response === "") {
           throw new Error("Please complete the reCAPTCHA verification.");
         }
@@ -4162,11 +4186,11 @@
             // Execute invisible reCAPTCHA for step transition
             console.log("🤖 Executing invisible reCAPTCHA for step transition...");
             
-            // Execute invisible reCAPTCHA using specific widget ID
-            if (invisibleRecaptchaId !== null) {
+            // Execute invisible reCAPTCHA (single widget approach)
+            if (recaptchaReady && currentRecaptchaId !== null) {
               try {
-                console.log("🤖 Executing invisible reCAPTCHA with ID:", invisibleRecaptchaId);
-                grecaptcha.execute(invisibleRecaptchaId);
+                console.log("🤖 Executing invisible reCAPTCHA with ID:", currentRecaptchaId);
+                grecaptcha.execute(currentRecaptchaId);
                 console.log("✅ Invisible reCAPTCHA execution initiated");
                 
                 // Fallback timeout in case invisible reCAPTCHA doesn't respond
@@ -4184,7 +4208,7 @@
                 showStep2();
               }
             } else {
-              console.log("❌ Invisible reCAPTCHA widget not loaded yet, proceeding without token");
+              console.log("❌ reCAPTCHA not ready, proceeding without token");
               showStep2();
             }
           } catch (error) {
