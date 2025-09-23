@@ -2803,8 +2803,12 @@
       
       window.onInvisibleRecaptchaError = function(error) {
         console.error("❌ Invisible reCAPTCHA error:", error);
-        console.log("This might be a domain/configuration issue");
-        console.log("Proceeding to step 2 without token");
+        console.error("🚨 DOMAIN CONFIGURATION ISSUE DETECTED");
+        console.error("🔧 Site key not configured for invisible reCAPTCHA on og-jcr.github.io");
+        console.error("💡 SOLUTION: Add og-jcr.github.io to reCAPTCHA Admin Console with invisible type enabled");
+        console.log("📋 For now, proceeding with visible reCAPTCHA only");
+        
+        // Show step 2 immediately and render visible reCAPTCHA
         showStep2();
         setTimeout(() => {
           renderVisibleRecaptcha();
