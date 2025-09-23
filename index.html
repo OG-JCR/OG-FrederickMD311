@@ -3046,21 +3046,29 @@
         
         try {
           const tokenParts = token.split('.');
-          if (tokenParts.length !== 3) {
-            console.warn("Invalid token format");
+          
+          // Handle JWE tokens (encrypted JWT) which have 5 parts
+          if (tokenParts.length === 5) {
+            // This is a JWE token - we can't decode it client-side
+            // For now, assume it's valid if it exists and is recent
+            console.log("JWE token detected - assuming valid");
+            return false;
+          } else if (tokenParts.length === 3) {
+            // This is a regular JWT token
+            const payload = JSON.parse(atob(tokenParts[1]));
+            const currentTime = Math.floor(Date.now() / 1000);
+            
+            // Check if token has expiration and if it's expired
+            if (payload.exp && payload.exp < currentTime) {
+              console.log("Token expired at:", new Date(payload.exp * 1000));
+              return true;
+            }
+            
+            return false;
+          } else {
+            console.warn("Invalid token format - expected 3 or 5 parts, got:", tokenParts.length);
             return true;
           }
-          
-          const payload = JSON.parse(atob(tokenParts[1]));
-          const currentTime = Math.floor(Date.now() / 1000);
-          
-          // Check if token has expiration and if it's expired
-          if (payload.exp && payload.exp < currentTime) {
-            console.log("Token expired at:", new Date(payload.exp * 1000));
-            return true;
-          }
-          
-          return false;
         } catch (error) {
           console.warn("Could not decode token, treating as expired:", error);
           return true;
