@@ -2846,7 +2846,8 @@
       window.onRecaptchaSuccess = function(token) {
         console.log("Visible reCAPTCHA completed successfully for form submission");
         enableSubmitButton();
-        // This token will be used for final form submission
+        // Generate public token immediately when reCAPTCHA is completed
+        generatePublicTokenWithRecaptcha(token);
       };
       
       // Function to generate public token immediately on page load (without reCAPTCHA)
