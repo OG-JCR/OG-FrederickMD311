@@ -2805,6 +2805,10 @@
             console.error("❌ Failed to generate step transition token");
             alert("Failed to authenticate for map data access. Please try again.");
           }
+        }).catch(error => {
+          console.error("❌ Error in step transition token generation:", error);
+          alert("Failed to authenticate for map data access. Please try again.");
+          showStep2(); // Show step 2 anyway to not block user
         });
       };
       
@@ -2813,8 +2817,9 @@
         clearRecaptchaToken();
       };
       
-      window.onInvisibleRecaptchaError = function() {
-        console.log("❌ Invisible reCAPTCHA error occurred");
+      window.onInvisibleRecaptchaError = function(error) {
+        console.error("❌ Invisible reCAPTCHA error occurred:", error);
+        console.log("This might be due to domain restrictions or network issues");
         clearRecaptchaToken();
       };
       
@@ -4158,17 +4163,30 @@
             
             // Execute invisible reCAPTCHA for step transition
             console.log("🤖 Executing invisible reCAPTCHA for step transition...");
-            try {
-              if (invisibleRecaptchaId !== null) {
+            
+            if (invisibleRecaptchaId !== null) {
+              try {
+                console.log("📋 Invisible widget ID:", invisibleRecaptchaId);
                 // Execute the specific invisible reCAPTCHA widget
                 grecaptcha.execute(invisibleRecaptchaId);
                 // Note: showStep2() will be called from onInvisibleRecaptchaSuccess callback
-              } else {
-                console.log("❌ Invisible reCAPTCHA widget not loaded yet, proceeding without token");
+                console.log("✅ Invisible reCAPTCHA execution initiated");
+                
+                // Fallback timeout in case invisible reCAPTCHA doesn't respond
+                setTimeout(() => {
+                  if (document.getElementById('step1').style.display !== 'none') {
+                    console.log("⏰ Invisible reCAPTCHA timeout - proceeding to step 2");
+                    showStep2();
+                  }
+                }, 10000); // 10 second timeout
+                
+              } catch (error) {
+                console.error("❌ Error executing invisible reCAPTCHA:", error);
+                console.log("Proceeding to step 2 without authentication token");
                 showStep2();
               }
-            } catch (error) {
-              console.log("❌ Error executing invisible reCAPTCHA, proceeding without token:", error);
+            } else {
+              console.log("❌ Invisible reCAPTCHA widget not loaded yet, proceeding without token");
               showStep2();
             }
           } catch (error) {
