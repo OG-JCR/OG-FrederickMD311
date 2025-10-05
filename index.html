@@ -2985,6 +2985,17 @@
         const hasDescription = requestDescription && requestDescription.trim() !== '';
         const hasRecaptcha = recaptchaToken && recaptchaToken !== '';
         
+        // Debug logging
+        console.log('Form Readiness Check:', {
+          latitude,
+          longitude,
+          hasLocation,
+          hasDescription: hasDescription,
+          descriptionLength: requestDescription?.length,
+          hasRecaptcha,
+          allReady: hasLocation && hasDescription && hasRecaptcha
+        });
+        
         return hasLocation && hasDescription && hasRecaptcha;
       }
       
@@ -2995,11 +3006,13 @@
         if (submitButton && submitButtonText) {
           submitButton.disabled = false;
           submitButton.classList.remove('disabled');
-          submitButton.style.opacity = '1';
-          submitButton.style.cursor = 'pointer';
-          submitButton.style.background = ''; // Reset to default gradient
-          submitButton.style.transform = ''; // Reset transform
-          submitButton.style.boxShadow = ''; // Reset shadow
+          submitButton.classList.remove('btn-secondary');
+          // Force enable styling with !important via inline styles
+          submitButton.style.setProperty('opacity', '1', 'important');
+          submitButton.style.setProperty('cursor', 'pointer', 'important');
+          submitButton.style.setProperty('background', 'linear-gradient(135deg, #004785, #1F6FEB)', 'important');
+          submitButton.style.setProperty('transform', '', 'important');
+          submitButton.style.setProperty('box-shadow', '0 4px 6px rgba(0, 71, 133, 0.3)', 'important');
           submitButtonText.textContent = 'Submit Service Request';
         }
       }
