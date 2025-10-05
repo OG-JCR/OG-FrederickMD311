@@ -3039,6 +3039,9 @@
         }
       }
       
+      // Make updateSubmitButtonState globally available
+      window.updateSubmitButtonState = updateSubmitButtonState;
+      
       // Initialize reCAPTCHA v2 (simple like working example)
       document.addEventListener('DOMContentLoaded', function() {
         // Start with submit button disabled until reCAPTCHA is completed
@@ -5655,12 +5658,12 @@
             .then((processedFiles) => {
               displayFiles();
               hideFileProcessingIndicator();
-              updateSubmitButtonState();
+              checkFileProcessingState();
             })
             .catch((error) => {
               hideFileProcessingIndicator();
               displayFiles();
-              updateSubmitButtonState();
+              checkFileProcessingState();
               showError(error.message, "File Processing Error");
             });
         }
@@ -5731,13 +5734,13 @@
             photoPreview.appendChild(previewItem);
           });
           
-          updateSubmitButtonState();
+          checkFileProcessingState();
         }
 
         window.removeFile = function (fileId) {
           uploadedFiles = uploadedFiles.filter((file) => file.id !== fileId);
           displayFiles();
-          updateSubmitButtonState();
+          checkFileProcessingState();
         };
 
         // New helper functions for file processing
@@ -5766,7 +5769,7 @@
           }
         }
 
-        function updateSubmitButtonState() {
+        function checkFileProcessingState() {
           const submitButton = document.getElementById("submitButton");
           if (!submitButton) return;
           
@@ -5777,9 +5780,10 @@
             submitButton.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing Files...';
             submitButton.style.opacity = '0.7';
           } else if (!submitButton.classList.contains('submitting')) {
-            submitButton.disabled = false;
-            submitButton.innerHTML = '<i class="bi bi-send"></i> Submit Service Request';
-            submitButton.style.opacity = '1';
+            // Call the global validation function
+            if (typeof window.updateSubmitButtonState === 'function') {
+              window.updateSubmitButtonState();
+            }
           }
         }
 
