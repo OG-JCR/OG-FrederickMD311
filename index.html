@@ -1895,6 +1895,7 @@
         <!-- Service Request Form -->
         <form class="service-request-form" id="serviceRequestForm">
         <!-- Anonymous Request Option -->
+        <!-- COMMENTED OUT: This is a public form for non-registered users only
         <div class="form-section">
           <div class="section-header">
             <div class="section-icon">
@@ -1923,8 +1924,10 @@
             </div>
           </div>
         </div>
+        -->
 
         <!-- Contact Information -->
+        <!-- COMMENTED OUT: This is a public form for non-registered users only
         <div class="form-section" id="contactInformationSection">
           <div class="section-header">
             <div class="section-icon">
@@ -2043,6 +2046,7 @@
             </div>
           </div>
         </div>
+        -->
 
         <!-- Form Sections -->
         <div id="additionalSections">
@@ -3256,30 +3260,9 @@
             Name: "request_address",
             Value: serviceRequestData.locationInfo.address || ""
           },
-          {
-            Name: "contact_first_name",
-            Value: serviceRequestData.requestInfo.isAnonymous ? "" : (serviceRequestData.contactInfo.firstName || "")
-          },
-          {
-            Name: "contact_last_name",
-            Value: serviceRequestData.requestInfo.isAnonymous ? "" : (serviceRequestData.contactInfo.lastName || "")
-          },
-          {
-            Name: "contact_phone",
-            Value: serviceRequestData.requestInfo.isAnonymous ? "" : (serviceRequestData.contactInfo.phone || "")
-          },
-          {
-            Name: "contact_email",
-            Value: serviceRequestData.requestInfo.isAnonymous ? "" : (serviceRequestData.contactInfo.email || "")
-          },
-          {
-            Name: "contact_follow_up",
-            Value: serviceRequestData.requestInfo.isAnonymous ? "" : (serviceRequestData.contactInfo.followUp || "")
-          },
-          {
-            Name: "preferred_contact_method",
-            Value: serviceRequestData.requestInfo.isAnonymous ? "" : (serviceRequestData.contactInfo.preferredContactMethod || "")
-          },
+          // REMOVED: Contact information fields (public form for non-registered users only)
+          // contact_first_name, contact_last_name, contact_phone, contact_email, 
+          // contact_follow_up, preferred_contact_method
           {
             Name: "description",
             Value: serviceRequestData.detailsInfo.requestDescription
@@ -6270,6 +6253,8 @@
           }
         });
 
+        // COMMENTED OUT: Anonymous request event listener (public form is always anonymous)
+        /*
         document.getElementById("anonymousRequest").addEventListener("change", function (e) {
           const contactSection = document.getElementById("contactInformationSection");
           const isAnonymous = e.target.checked;
@@ -6334,6 +6319,7 @@
             });
           }
         });
+        */
 
         // Form submission handler
         form.addEventListener("submit", function (e) {
@@ -6377,17 +6363,14 @@
           }
           
           
-          const isAnonymous = formData.get("anonymousRequest") === "on";
-          const followUpResponse = formData.get("followUp");
+          // REMOVED: Anonymous checkbox logic (public form is always anonymous)
+          // const isAnonymous = formData.get("anonymousRequest") === "on";
+          // const followUpResponse = formData.get("followUp");
+          
+          // Validate required fields for public anonymous form
           let requiredFields = ['requestType', 'requestDescription'];
           
-          if (!isAnonymous) {
-            requiredFields = requiredFields.concat(['firstName', 'lastName', 'email', 'phone', 'followUp']);
-            
-            if (followUpResponse === "Yes") {
-              requiredFields.push('preferredContactMethod');
-            }
-          }
+          // REMOVED: Contact info validation (public form for non-registered users only)
           
           const missingFields = [];
           
@@ -6408,8 +6391,9 @@
             return;
           }
           
-          const phoneFormatted = formData.get("phone");
-          const phoneUnformatted = phoneFormatted ? phoneFormatted.replace(/\D/g, "") : "";
+          // REMOVED: Phone formatting (not needed for anonymous form)
+          // const phoneFormatted = formData.get("phone");
+          // const phoneUnformatted = phoneFormatted ? phoneFormatted.replace(/\D/g, "") : "";
 
           // Create 311 service request data structure
           const serviceRequestData = {
@@ -6418,21 +6402,14 @@
               requestType: formData.get("requestType"),
               status: "Open",
               submissionTime: new Date().toISOString(),
-              isAnonymous: isAnonymous
+              isAnonymous: true  // Always anonymous for public form
             },
             locationInfo: {
               latitude: formData.get("latitude") || "0",
               longitude: formData.get("longitude") || "0",
               address: formData.get("addressSearch") || ""
             },
-            contactInfo: isAnonymous ? {} : {
-              firstName: formData.get("firstName"),
-              lastName: formData.get("lastName"),
-              phone: phoneUnformatted,
-              email: formData.get("email"),
-              followUp: formData.get("followUp"),
-              preferredContactMethod: formData.get("followUp") === "Yes" ? formData.get("preferredContactMethod") : ""
-            },
+            // REMOVED: contactInfo (public form for non-registered users only)
             detailsInfo: {
               requestDescription: formData.get("requestDescription") || ""
             },
