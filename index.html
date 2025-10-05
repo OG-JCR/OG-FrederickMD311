@@ -3100,6 +3100,10 @@
         recaptchaTokenTimestamp = Date.now();
       }
       
+      function getRecaptchaToken() {
+        return recaptchaToken;
+      }
+      
       function setApiAccessToken(token) {
         apiAccessToken = token;
         apiAccessTokenTimestamp = Date.now();
