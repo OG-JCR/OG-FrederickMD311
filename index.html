@@ -5618,56 +5618,40 @@
           }
 
           const filePromises = filesToProcess.map((file, index) => {
-            const fileId = Date.now() + Math.random() + index;
-            const fileObj = {
-              id: fileId,
-              file: file,
-              name: file.name,
-              type: file.type,
-              url: null,
-              base64: null,
-              isProcessing: true
-            };
-
-           
-            uploadedFiles.push(fileObj);
-
             return fileToBase64(file, false).then((result) => {
-              fileObj.url = result.value;
-              fileObj.base64 = result.value.split(',')[1];
-              fileObj.name = result.name;
-              fileObj.isProcessing = false;
+              const fileId = Date.now() + Math.random() + index;
+              const fileObj = {
+                id: fileId,
+                file: file,
+                name: result.name,
+                type: file.type,
+                url: result.value,
+                base64: result.value.split(',')[1]
+              };
               
-             
+              // Check if file was compressed
               const finalSizeKB = (result.value.length * 0.75) / 1024;
               const originalSizeKB = file.size / 1024;
               fileObj.wasCompressed = originalSizeKB > 2048 && finalSizeKB < originalSizeKB * 0.9;
               
+              uploadedFiles.push(fileObj);
               return fileObj;
             }).catch((error) => {
-             
-              const index = uploadedFiles.findIndex(f => f.id === fileId);
-              if (index > -1) {
-                uploadedFiles.splice(index, 1);
-              }
               throw new Error(`Failed to process "${file.name}": ${error.message}`);
             });
           });
-
-          
-          displayFiles();
 
           
           Promise.all(filePromises)
             .then((processedFiles) => {
               displayFiles();
               hideFileProcessingIndicator();
-              checkFileProcessingState();
+              updateSubmitButtonState(); // Use global validation instead
             })
             .catch((error) => {
               hideFileProcessingIndicator();
               displayFiles();
-              checkFileProcessingState();
+              updateSubmitButtonState(); // Use global validation instead
               showError(error.message, "File Processing Error");
             });
         }
@@ -5678,15 +5662,8 @@
             const previewItem = document.createElement("div");
             previewItem.className = "preview-item";
             
-            if (fileObj.isProcessing) {
-              previewItem.innerHTML = `
-                <div class="file-processing">
-                  <div class="processing-spinner"></div>
-                  <div class="file-name">${fileObj.name}</div>
-                  <div class="processing-text">Processing...</div>
-                </div>
-              `;
-            } else if (fileObj.url && fileObj.type.startsWith('image/')) {
+            // Files are processed immediately, no need for isProcessing check
+            if (fileObj.url && fileObj.type.startsWith('image/')) {
               const compressionNote = fileObj.wasCompressed ? '<div class="compression-note"><i class="bi bi-info-circle"></i> Compressed</div>' : '';
               // Ensure fileObj.url is valid before using it
               const imageUrl = fileObj.url && fileObj.url !== 'undefined' ? fileObj.url : '';
@@ -5738,13 +5715,13 @@
             photoPreview.appendChild(previewItem);
           });
           
-          checkFileProcessingState();
+          // No need to check file processing state - files are processed immediately
         }
 
         window.removeFile = function (fileId) {
           uploadedFiles = uploadedFiles.filter((file) => file.id !== fileId);
           displayFiles();
-          checkFileProcessingState();
+          updateSubmitButtonState(); // Update button state after removing file
         };
 
         // New helper functions for file processing
@@ -5773,23 +5750,9 @@
           }
         }
 
-        function checkFileProcessingState() {
-          const submitButton = document.getElementById("submitButton");
-          if (!submitButton) return;
-          
-          const hasProcessingFiles = uploadedFiles.some(file => file.isProcessing);
-          
-          if (hasProcessingFiles) {
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing Files...';
-            submitButton.style.opacity = '0.7';
-          } else if (!submitButton.classList.contains('submitting')) {
-            // Call the global validation function
-            if (typeof window.updateSubmitButtonState === 'function') {
-              window.updateSubmitButtonState();
-            }
-          }
-        }
+        // REMOVED: checkFileProcessingState function
+        // Files are now processed synchronously, no need for separate processing state
+        // The global updateSubmitButtonState() handles all validation
 
         // Make functions globally available
         window.getCurrentLocation = getCurrentLocation;
@@ -6514,21 +6477,14 @@
                 continue;
               }
               
-              if (fileObj.isProcessing) {
-                unprocessedFiles.push(fileObj.name || `File ${i + 1}`);
-                continue;
-              }
+              // Files are processed immediately, no isProcessing check needed
               
               if (!fileObj.base64 || !fileObj.name) {
                 invalidFiles.push(fileObj.name || `File ${i + 1}`);
               }
             }
             
-            if (unprocessedFiles.length > 0) {
-              showError(`Please wait for file processing to complete: ${unprocessedFiles.join(', ')}`, "Files Still Processing");
-              resetSubmitButton();
-              return;
-            }
+            // No need to check for unprocessedFiles - files are processed immediately
             
             if (invalidFiles.length > 0) {
               showError(`Some files failed to process properly: ${invalidFiles.join(', ')}. Please remove and re-add these files.`, "File Processing Failed");
