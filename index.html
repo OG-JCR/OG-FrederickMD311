@@ -6735,6 +6735,39 @@
             }
             selectedRequestType = null;
             clearServiceButtonSelection();
+            
+            // Reset reCAPTCHA tokens and widgets
+            clearRecaptchaToken();
+            clearApiAccessToken();
+            
+            // Reset Step 1 reCAPTCHA widget
+            if (typeof grecaptcha !== 'undefined' && typeof stepTransitionRecaptchaId !== 'undefined') {
+              try {
+                grecaptcha.reset(stepTransitionRecaptchaId);
+              } catch (e) {
+                console.log('Step 1 reCAPTCHA reset skipped');
+              }
+            }
+            
+            // Reset Step 2 reCAPTCHA widget
+            if (typeof grecaptcha !== 'undefined' && typeof formSubmissionRecaptchaId !== 'undefined') {
+              try {
+                grecaptcha.reset(formSubmissionRecaptchaId);
+              } catch (e) {
+                console.log('Step 2 reCAPTCHA reset skipped');
+              }
+            }
+            
+            // Disable continue button in Step 1
+            const continueButton = document.getElementById('continueButton');
+            if (continueButton) {
+              continueButton.disabled = true;
+              continueButton.innerHTML = '<i class="bi bi-shield-check"></i> Complete Security Check';
+            }
+            
+            // Disable submit button in Step 2
+            disableSubmitButton();
+            
             showStep1();
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }, 3000);
