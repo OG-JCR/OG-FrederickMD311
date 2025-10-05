@@ -1588,6 +1588,158 @@
         100% { transform: rotate(360deg); }
       }
 
+      /* Welcome Modal Styles */
+      .welcome-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.75);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        padding: 1rem;
+      }
+
+      .welcome-modal-overlay.show {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .welcome-modal {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        max-width: 500px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.9) translateY(20px);
+        transition: all 0.3s ease;
+      }
+
+      .welcome-modal-overlay.show .welcome-modal {
+        transform: scale(1) translateY(0);
+      }
+
+      .welcome-modal-header {
+        padding: 2rem 2rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .welcome-modal-body {
+        padding: 1.5rem 2rem 2rem;
+      }
+
+      .benefits-section {
+        background: #f0f4f8;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .benefits-section ul li {
+        margin-bottom: 0.5rem;
+      }
+
+      .benefits-section ul li:last-child {
+        margin-bottom: 0;
+      }
+
+      .welcome-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .welcome-btn {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        border-radius: 0.5rem;
+        border: 2px solid transparent;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        font-family: inherit;
+        width: 100%;
+        text-align: left;
+      }
+
+      .welcome-btn i {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+      }
+
+      .welcome-btn .btn-title {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .welcome-btn .btn-subtitle {
+        font-size: 0.85rem;
+        opacity: 0.8;
+      }
+
+      .welcome-btn.primary {
+        background: linear-gradient(135deg, #004785, #1F6FEB);
+        color: white;
+        border-color: #004785;
+      }
+
+      .welcome-btn.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 71, 133, 0.3);
+      }
+
+      .welcome-btn.secondary {
+        background: white;
+        color: #004785;
+        border-color: #004785;
+      }
+
+      .welcome-btn.secondary:hover {
+        background: #f0f4f8;
+        transform: translateY(-2px);
+      }
+
+      .welcome-btn.anonymous {
+        background: #f9fafb;
+        color: #6b7280;
+        border-color: #e5e7eb;
+      }
+
+      .welcome-btn.anonymous:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+      }
+
+      .anonymous-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 0.5rem;
+        font-size: 0.85rem;
+        color: #856404;
+        line-height: 1.5;
+      }
+
+      .anonymous-notice i {
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
       /* Responsive Design */
       @media (max-width: 768px) {
         .header-content {
@@ -2548,6 +2700,67 @@
       </div> <!-- End step2Content -->
     </main>
 
+    <!-- Welcome Modal -->
+    <div class="welcome-modal-overlay" id="welcomeModal">
+      <div class="welcome-modal">
+        <div class="welcome-modal-header">
+          <img src="https://images2.imgbox.com/4d/ee/YqHsgCGz_o.png" alt="City of Frederick Logo" style="max-width: 150px; height: auto; margin: 0 auto 1rem;">
+          <h2 style="color: #004785; margin: 0 0 0.5rem; font-size: 1.75rem; font-weight: 600; text-align: center;">Welcome to Frederick 311</h2>
+          <p style="color: #6b7280; text-align: center; margin: 0; font-size: 0.95rem;">Choose how you'd like to submit your service request</p>
+        </div>
+
+        <div class="welcome-modal-body">
+          <!-- Registered Account Benefits -->
+          <div class="benefits-section">
+            <h3 style="color: #004785; font-size: 1rem; font-weight: 600; margin: 0 0 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+              <i class="bi bi-star-fill" style="color: #FFD700;"></i>
+              Benefits of a Registered Account
+            </h3>
+            <ul style="margin: 0; padding-left: 1.25rem; color: #1f2d3d; font-size: 0.9rem; line-height: 1.6;">
+              <li>Track all your requests in one place</li>
+              <li>Receive email and text notifications</li>
+              <li>View complete request history</li>
+              <li>Faster submission for future requests</li>
+              <li>Communicate directly with our team</li>
+            </ul>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="welcome-actions">
+            <a href="https://apps.opengov.com/auth/register/sxol7egq1" class="welcome-btn primary">
+              <i class="bi bi-person-plus"></i>
+              <div>
+                <div class="btn-title">Create Account</div>
+                <div class="btn-subtitle">Register for Frederick 311</div>
+              </div>
+            </a>
+
+            <a href="https://apps.opengov.com/apps/sxol7egq1" class="welcome-btn secondary">
+              <i class="bi bi-box-arrow-in-right"></i>
+              <div>
+                <div class="btn-title">Login</div>
+                <div class="btn-subtitle">Access your account</div>
+              </div>
+            </a>
+
+            <button onclick="closeWelcomeModal()" class="welcome-btn anonymous">
+              <i class="bi bi-incognito"></i>
+              <div>
+                <div class="btn-title">Continue as Guest</div>
+                <div class="btn-subtitle">Submit anonymously</div>
+              </div>
+            </button>
+          </div>
+
+          <!-- Anonymous Notice -->
+          <div class="anonymous-notice">
+            <i class="bi bi-info-circle"></i>
+            <span>Anonymous requests cannot receive updates. <a href="https://apps.opengov.com/auth/register/sxol7egq1" style="color: #004785; text-decoration: underline;">Register</a> to stay informed.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Success Modal -->
     <div class="success-modal" id="successModal">
       <div class="success-modal-content">
@@ -2985,16 +3198,16 @@
         const hasDescription = requestDescription && requestDescription.trim() !== '';
         const hasRecaptcha = recaptchaToken && recaptchaToken !== '';
         
-        // Debug logging
-        console.log('Form Readiness Check:', {
-          latitude,
-          longitude,
-          hasLocation,
-          hasDescription: hasDescription,
-          descriptionLength: requestDescription?.length,
-          hasRecaptcha,
-          allReady: hasLocation && hasDescription && hasRecaptcha
-        });
+        // // Debug logging
+        // console.log('Form Readiness Check:', {
+        //   latitude,
+        //   longitude,
+        //   hasLocation,
+        //   hasDescription: hasDescription,
+        //   descriptionLength: requestDescription?.length,
+        //   hasRecaptcha,
+        //   allReady: hasLocation && hasDescription && hasRecaptcha
+        // });
         
         return hasLocation && hasDescription && hasRecaptcha;
       }
@@ -3046,7 +3259,31 @@
       document.addEventListener('DOMContentLoaded', function() {
         // Start with submit button disabled until reCAPTCHA is completed
         disableSubmitButton();
+        
+        // Show welcome modal on page load
+        showWelcomeModal();
       });
+      
+      // Welcome Modal Functions
+      function showWelcomeModal() {
+        const welcomeModal = document.getElementById('welcomeModal');
+        if (welcomeModal) {
+          // Small delay for smooth animation
+          setTimeout(() => {
+            welcomeModal.classList.add('show');
+          }, 300);
+        }
+      }
+      
+      function closeWelcomeModal() {
+        const welcomeModal = document.getElementById('welcomeModal');
+        if (welcomeModal) {
+          welcomeModal.classList.remove('show');
+        }
+      }
+      
+      // Make closeWelcomeModal globally available
+      window.closeWelcomeModal = closeWelcomeModal;
       
       // Check if app version has changed and clear cache if needed
       function checkAppVersion() {
