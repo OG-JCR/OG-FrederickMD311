@@ -2878,7 +2878,8 @@
         // Store the reCAPTCHA token with timestamp
         setRecaptchaToken(token);
         
-        enableSubmitButton();
+        // Check if all required fields are filled before enabling
+        updateSubmitButtonState();
         
         // Generate access token
         generatePublicTokenWithRecaptcha(token);
@@ -2972,6 +2973,21 @@
       }
       
       
+      // Function to check if all required fields are filled for anonymous form
+      function checkFormReadiness() {
+        const latitude = document.getElementById('latitude')?.value;
+        const longitude = document.getElementById('longitude')?.value;
+        const requestDescription = document.getElementById('requestDescription')?.value;
+        const recaptchaToken = getRecaptchaToken();
+        
+        // Check if all required fields are filled
+        const hasLocation = latitude && longitude && latitude !== '0' && longitude !== '0';
+        const hasDescription = requestDescription && requestDescription.trim() !== '';
+        const hasRecaptcha = recaptchaToken && recaptchaToken !== '';
+        
+        return hasLocation && hasDescription && hasRecaptcha;
+      }
+      
       // Function to enable submit button
       function enableSubmitButton() {
         const submitButton = document.getElementById('submitButton');
@@ -2996,8 +3012,17 @@
           submitButton.disabled = true;
           submitButton.style.opacity = '0.6';
           submitButton.style.cursor = 'not-allowed';
-          submitButtonText.textContent = 'Finish Verification to Proceed';
+          submitButtonText.textContent = 'Complete All Required Fields';
           submitButton.classList.add('disabled');
+        }
+      }
+      
+      // Function to update submit button state based on form readiness
+      function updateSubmitButtonState() {
+        if (checkFormReadiness()) {
+          enableSubmitButton();
+        } else {
+          disableSubmitButton();
         }
       }
       
@@ -3763,6 +3788,14 @@
         if (submitButton) {
           submitButton.disabled = true;
           submitButton.classList.add('btn-secondary');
+        }
+        
+        // Add event listener for request description to check form readiness
+        const requestDescriptionField = document.getElementById('requestDescription');
+        if (requestDescriptionField) {
+          requestDescriptionField.addEventListener('input', function() {
+            updateSubmitButtonState();
+          });
         }
 
         // Frederick, MD default center coordinates and zoom level
@@ -4985,13 +5018,16 @@
             addressInput.value = '';
             addressInput.placeholder = 'Start typing an address in Frederick, MD...';
           }
-
+          
           if (esriMapView && currentMarker) {
             esriMapView.graphics.remove(currentMarker);
             currentMarker = null;
           }
           hideAddressDisplay();
           hideCoordinateMessage();
+          
+          // Check if form is ready to submit
+          updateSubmitButtonState();
         }
 
 
@@ -5082,6 +5118,9 @@
           
           // Update coordinate display
           updateAddressDisplay(lat, lng);
+          
+          // Check if form is ready to submit
+          updateSubmitButtonState();
         }
         
         
