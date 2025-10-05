@@ -2978,10 +2978,13 @@
         const submitButtonText = document.getElementById('submitButtonText');
         if (submitButton && submitButtonText) {
           submitButton.disabled = false;
+          submitButton.classList.remove('disabled');
           submitButton.style.opacity = '1';
           submitButton.style.cursor = 'pointer';
+          submitButton.style.background = ''; // Reset to default gradient
+          submitButton.style.transform = ''; // Reset transform
+          submitButton.style.boxShadow = ''; // Reset shadow
           submitButtonText.textContent = 'Submit Service Request';
-          submitButton.classList.remove('disabled');
         }
       }
       
@@ -6552,12 +6555,18 @@
             anonymousIndicator.style.display = 'flex';
 
             locationRow.style.display = 'flex';
-            const lat = parseFloat(serviceRequestData.locationInfo.latitude);
-            const lng = parseFloat(serviceRequestData.locationInfo.longitude);
-            if (lat !== 0 && lng !== 0) {
-              document.getElementById("locationValue").textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            // Display address instead of coordinates
+            const address = serviceRequestData.locationInfo.address;
+            if (address && address.trim() !== "") {
+              document.getElementById("locationValue").textContent = address;
             } else {
-              document.getElementById("locationValue").textContent = "Location not specified";
+              const lat = parseFloat(serviceRequestData.locationInfo.latitude);
+              const lng = parseFloat(serviceRequestData.locationInfo.longitude);
+              if (lat !== 0 && lng !== 0) {
+                document.getElementById("locationValue").textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+              } else {
+                document.getElementById("locationValue").textContent = "Location not specified";
+              }
             }
             
             descriptionRow.style.display = 'flex';
