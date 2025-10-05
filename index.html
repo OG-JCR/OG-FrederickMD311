@@ -6492,7 +6492,7 @@
               return createServiceRequest(serviceRequestData);
             })
             .then(response => {
-              showSuccessModal(serviceRequestData, phoneFormatted);
+              showSuccessModal(serviceRequestData, ""); // No phone for anonymous form
             })
             .catch(error => {
               errorMessage.style.display = "block";
@@ -6581,7 +6581,8 @@
             
           } else {
             // === REGULAR REQUEST DISPLAY ===
-            
+            // COMMENTED OUT: No longer used (public form is always anonymous)
+            /*
             // Update modal header for regular requests
             document.getElementById("modalTitle").textContent = "Request Submitted Successfully!";
             document.getElementById("modalSubtitle").textContent = "Your 311 service request has been received";
@@ -6598,6 +6599,7 @@
             
             regularNextSteps.style.display = 'block';
             anonymousNextSteps.style.display = 'none';
+            */
           }
 
           const successModal = document.getElementById("successModal");
@@ -6619,6 +6621,8 @@
           setTimeout(() => {
             completionOverlay.classList.remove("show");
             form.reset();
+            // COMMENTED OUT: Contact section reset (public form is always anonymous)
+            /*
             const anonymousCheckbox = document.getElementById("anonymousRequest");
             const contactSection = document.getElementById("contactInformationSection");
             
@@ -6642,6 +6646,7 @@
                 });
               }
             }
+            */
             const uploadedPhotos = document.getElementById("uploadedPhotos");
             if (uploadedPhotos) {
               uploadedPhotos.innerHTML = "";
