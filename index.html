@@ -3127,14 +3127,37 @@
       // Function to render form submission reCAPTCHA (visible checkbox for form submission)
       function renderFormSubmissionRecaptcha() {
         try {
-          formSubmissionRecaptchaId = grecaptcha.render('visible-recaptcha', {
-            'sitekey': RECAPTCHA_SITE_KEY,
-            'callback': onRecaptchaSuccess,
-            'expired-callback': onRecaptchaExpired,
-            'error-callback': onRecaptchaError
-          });
+          // Check if already rendered
+          if (formSubmissionRecaptchaId !== null) {
+            console.log('🔄 reCAPTCHA already rendered with ID:', formSubmissionRecaptchaId);
+            // Reset existing widget instead of re-rendering
+            try {
+              grecaptcha.reset(formSubmissionRecaptchaId);
+              console.log('✅ reCAPTCHA reset successfully');
+            } catch (e) {
+              console.log('⚠️ Could not reset, will re-render');
+              formSubmissionRecaptchaId = null;
+            }
+          }
+          
+          // Only render if not already rendered
+          if (formSubmissionRecaptchaId === null) {
+            const container = document.getElementById('visible-recaptcha');
+            if (container && container.children.length > 0) {
+              console.log('⚠️ reCAPTCHA container has children, clearing...');
+              container.innerHTML = '';
+            }
+            
+            formSubmissionRecaptchaId = grecaptcha.render('visible-recaptcha', {
+              'sitekey': RECAPTCHA_SITE_KEY,
+              'callback': onRecaptchaSuccess,
+              'expired-callback': onRecaptchaExpired,
+              'error-callback': onRecaptchaError
+            });
+            console.log('✅ reCAPTCHA rendered with ID:', formSubmissionRecaptchaId);
+          }
         } catch (error) {
-          console.error("Failed to render form submission reCAPTCHA:", error);
+          console.error("❌ Failed to render form submission reCAPTCHA:", error);
         }
       }
       
@@ -3175,14 +3198,19 @@
       
       // Visible reCAPTCHA callbacks (for form submission)
       window.onRecaptchaSuccess = function(token) {
+        console.log('✅ onRecaptchaSuccess called with token:', token ? token.substring(0, 20) + '...' : 'null');
+        
         // Store the reCAPTCHA token with timestamp
         setRecaptchaToken(token);
+        console.log('📝 Token stored');
         
         // Check if all required fields are filled before enabling
         updateSubmitButtonState();
+        console.log('🔄 Submit button state updated');
         
         // Generate access token
         generatePublicTokenWithRecaptcha(token);
+        console.log('🔑 Generating access token');
       };
       
       window.onRecaptchaExpired = function() {
