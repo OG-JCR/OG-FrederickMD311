@@ -2773,7 +2773,8 @@
       </div> <!-- End step2Content -->
     </main>
 
-    <!-- Welcome Modal -->
+    <!-- Welcome Modal - DISABLED per customer request (code kept for potential reactivation) -->
+    <!-- To reactivate: uncomment the showWelcomeModal() call in DOMContentLoaded -->
     <div class="welcome-modal-overlay" id="welcomeModal">
       <div class="welcome-modal">
         <div class="welcome-modal-header">
@@ -3327,13 +3328,13 @@
       // Make updateSubmitButtonState globally available
       window.updateSubmitButtonState = updateSubmitButtonState;
       
-      // Initialize reCAPTCHA v2 (simple like working example)
+      // Initialize reCAPTCHA v2
       document.addEventListener('DOMContentLoaded', function() {
         // Start with submit button disabled until reCAPTCHA is completed
         disableSubmitButton();
         
-        // Show welcome modal on page load
-        showWelcomeModal();
+        // Show welcome modal on page load - COMMENTED OUT per customer request
+        // showWelcomeModal();
       });
       
       // Welcome Modal Functions
