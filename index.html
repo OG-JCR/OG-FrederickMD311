@@ -2473,13 +2473,84 @@
             <div id="parkConcernFields" style="display: none;">
               <div class="form-group" style="margin-bottom: 1rem;">
                 <label for="cityPark" class="form-label">City Park</label>
-                <input
-                  type="text"
+                <select
                   id="cityPark"
                   name="cityPark"
                   class="form-control"
-                  placeholder="Enter the name of the city park..."
-                />
+                >
+                  <option value="">Select a park...</option>
+                  <option value="Amber Meadows Park">Amber Meadows Park</option>
+                  <option value="Apple Avenue Park">Apple Avenue Park</option>
+                  <option value="Baker Park">Baker Park</option>
+                  <option value="Baker Park Bandshell">Baker Park Bandshell</option>
+                  <option value="Baughman's Babee Park">Baughman's Babee Park</option>
+                  <option value="Bentztown Spring Park">Bentztown Spring Park</option>
+                  <option value="Bonita Maas Park">Bonita Maas Park</option>
+                  <option value="Cannon Bluff Park">Cannon Bluff Park</option>
+                  <option value="Carroll Creek Linear Park">Carroll Creek Linear Park</option>
+                  <option value="Carrollton Park">Carrollton Park</option>
+                  <option value="Catoctin Park">Catoctin Park</option>
+                  <option value="City Hall Park">City Hall Park</option>
+                  <option value="Clerestory Park">Clerestory Park</option>
+                  <option value="Clover Ridge Park">Clover Ridge Park</option>
+                  <option value="Cobblestone Park">Cobblestone Park</option>
+                  <option value="College Estates Park">College Estates Park</option>
+                  <option value="Commons of Avalon Park">Commons of Avalon Park</option>
+                  <option value="David Lane Park">David Lane Park</option>
+                  <option value="Diggs Pool">Diggs Pool</option>
+                  <option value="Dog Park - Bentz Street">Dog Park - Bentz Street</option>
+                  <option value="Dog Park - Uptown">Dog Park - Uptown</option>
+                  <option value="East 3rd Street Park">East 3rd Street Park</option>
+                  <option value="Edward P. Thomas Memorial Swimming Pool">Edward P. Thomas Memorial Swimming Pool</option>
+                  <option value="Emerald Farms Park">Emerald Farms Park</option>
+                  <option value="Fountain Park">Fountain Park</option>
+                  <option value="Fredericktowne Village Park">Fredericktowne Village Park</option>
+                  <option value="Golfview Park">Golfview Park</option>
+                  <option value="Greenleaf Park">Greenleaf Park</option>
+                  <option value="Grove Park">Grove Park</option>
+                  <option value="Harmon Park">Harmon Park</option>
+                  <option value="Harry Grove Stadium">Harry Grove Stadium</option>
+                  <option value="Hill Street Park">Hill Street Park</option>
+                  <option value="Hillcrest Orchard Park">Hillcrest Orchard Park</option>
+                  <option value="Hospital Park">Hospital Park</option>
+                  <option value="Kellerton Park">Kellerton Park</option>
+                  <option value="Laboring Sons Memorial Grounds">Laboring Sons Memorial Grounds</option>
+                  <option value="Lake Coventry Park">Lake Coventry Park</option>
+                  <option value="Linden Hills Park">Linden Hills Park</option>
+                  <option value="Linear Greenway Park">Linear Greenway Park</option>
+                  <option value="Loats Park">Loats Park</option>
+                  <option value="Lucus Village Park">Lucus Village Park</option>
+                  <option value="Maryvale Park">Maryvale Park</option>
+                  <option value="Max Kehne Park">Max Kehne Park</option>
+                  <option value="McCurdy Field">McCurdy Field</option>
+                  <option value="Memorial Grounds">Memorial Grounds</option>
+                  <option value="Monarch Ridge Park">Monarch Ridge Park</option>
+                  <option value="Mullinix Park">Mullinix Park</option>
+                  <option value="North Crossing Park">North Crossing Park</option>
+                  <option value="Old Camp Park">Old Camp Park</option>
+                  <option value="Overlook Park">Overlook Park</option>
+                  <option value="Rivermist Park">Rivermist Park</option>
+                  <option value="Rock Creek Park">Rock Creek Park</option>
+                  <option value="Rosdale / Kidwiler Park">Rosdale / Kidwiler Park</option>
+                  <option value="Schley Park">Schley Park</option>
+                  <option value="South End Park">South End Park</option>
+                  <option value="Staley Park">Staley Park</option>
+                  <option value="Stonegate Park">Stonegate Park</option>
+                  <option value="Tasker's Chance Park">Tasker's Chance Park</option>
+                  <option value="Thomas Johnson Middle School Recreation Center">Thomas Johnson Middle School Recreation Center</option>
+                  <option value="Trinity Recreation Center">Trinity Recreation Center</option>
+                  <option value="Valley Street Park">Valley Street Park</option>
+                  <option value="Walnut Ridge Park">Walnut Ridge Park</option>
+                  <option value="Waterford Park">Waterford Park</option>
+                  <option value="West Side Regional Park">West Side Regional Park</option>
+                  <option value="Wetherburne Park">Wetherburne Park</option>
+                  <option value="Whittier Baseball Park">Whittier Baseball Park</option>
+                  <option value="Whittier Elementary School Recreation Center">Whittier Elementary School Recreation Center</option>
+                  <option value="Whittier Lake Park">Whittier Lake Park</option>
+                  <option value="William R. Talley Recreation Center">William R. Talley Recreation Center</option>
+                  <option value="Willow Brook Park">Willow Brook Park</option>
+                  <option value="Willowdale Park">Willowdale Park</option>
+                </select>
               </div>
 
               <div class="form-group" style="margin-bottom: 1rem;">
@@ -4341,7 +4412,7 @@
               const pollutionFields = document.getElementById('pollutionFields');
               
               if (additionalInfoSection && toterFields && bulkPickupFields && parkConcernFields && pollutionFields) {
-                if (value === 'Toter Repair or Replace') {
+                if (value === 'Bin Request - Repair/Replace') {
                   additionalInfoSection.style.display = 'block';
                   toterFields.style.display = 'block';
                   bulkPickupFields.style.display = 'none';
