@@ -6705,10 +6705,15 @@
 
           try {
             // Check if form submission reCAPTCHA is completed
+            console.log('🔍 reCAPTCHA validation:');
+            console.log('  - grecaptcha defined:', typeof grecaptcha !== 'undefined');
+            console.log('  - formSubmissionRecaptchaId:', formSubmissionRecaptchaId);
             
             const recaptchaResponse = formSubmissionRecaptchaId ? grecaptcha.getResponse(formSubmissionRecaptchaId) : null;
+            console.log('  - recaptchaResponse:', recaptchaResponse);
             
             if (typeof grecaptcha === 'undefined' || !formSubmissionRecaptchaId || !recaptchaResponse) {
+              console.log('❌ reCAPTCHA validation failed');
               errorMessage.style.display = "block";
               errorMessage.innerHTML = `
                 <i class="bi bi-exclamation-triangle me-2"></i>
@@ -6717,6 +6722,7 @@
               errorMessage.scrollIntoView({ behavior: "smooth" });
               return false;
             }
+            console.log('✅ reCAPTCHA validation passed');
             
             
             if (!isLocationValid || !selectedCoordinates || 
