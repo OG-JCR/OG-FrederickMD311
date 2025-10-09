@@ -4423,15 +4423,24 @@
           try {
             selectedRequestType = requestType;
             
-            // reCAPTCHA disabled - authenticate automatically if no token exists
+            // reCAPTCHA disabled for Step 1 - proceed directly to Step 2
+            // Authentication will happen during form submission (Step 2 has reCAPTCHA)
+            // Try to load existing token if available (for registered users)
             if (!userToken) {
-              // Try to authenticate without reCAPTCHA
-              const authenticated = await authenticateWithoutRecaptcha();
-              if (!authenticated) {
-                showError('Unable to authenticate. Please try again.');
-                continueButton.disabled = false;
-                continueButton.innerHTML = '<i class="bi bi-arrow-right"></i> Continue to Details';
-                return;
+              const storedToken = localStorage.getItem("token");
+              if (storedToken) {
+                try {
+                  const decryptedToken = CryptoJS.AES.decrypt(storedToken, aesKEY).toString(CryptoJS.enc.Utf8);
+                  if (decryptedToken && !isTokenExpired(decryptedToken)) {
+                    userToken = decryptedToken;
+                    const storedEmail = localStorage.getItem("UserName");
+                    if (storedEmail) {
+                      userEmail = CryptoJS.AES.decrypt(storedEmail, aesKEY).toString(CryptoJS.enc.Utf8);
+                    }
+                  }
+                } catch (error) {
+                  console.log('No valid stored token, will authenticate on form submission');
+                }
               }
             }
             
