@@ -3627,8 +3627,8 @@
         ];
 
         // Add Additional Information fields based on service type
-        if (serviceRequestData.requestInfo.requestType === 'Toter Repair or Replace') {
-          // Add populated toter fields
+        if (serviceRequestData.requestInfo.requestType === 'Bin Request - Repair/Replace') {
+          // Add populated toter/bin fields
           fieldsList.push({
             Name: "lid_damage_only",
             Value: serviceRequestData.additionalInfo.lidDamage || ""
@@ -4606,8 +4606,8 @@
           if (additionalInfoSection && toterFields && bulkPickupFields && parkConcernFields && pollutionFields) {
             console.log('✅ All elements found, processing request type:', selectedRequestType);
             
-            if (selectedRequestType === 'Toter Repair or Replace') {
-              console.log('💡 Showing Toter fields');
+            if (selectedRequestType === 'Bin Request - Repair/Replace') {
+              console.log('💡 Showing Toter/Bin fields');
               additionalInfoSection.style.display = 'block';
               toterFields.style.display = 'block';
               bulkPickupFields.style.display = 'none';
