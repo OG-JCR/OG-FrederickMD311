@@ -3841,7 +3841,7 @@
             Value: ""
           });
           
-        } else if (serviceRequestData.requestInfo.requestType === 'Suspected Pollution, Illicit Discharge, or Spill') {
+        } else if (serviceRequestData.requestInfo.requestType === 'Illicit Discharge') {
           fieldsList.push({
             Name: "lid_damage_only",
             Value: ""
@@ -4445,7 +4445,7 @@
                   clearPollutionFields();
                   setToterFieldsRequired(false);
                   setPollutionFieldsRequired(false);
-                } else if (value === 'Suspected Pollution, Illicit Discharge, or Spill') {
+                } else if (value === 'Illicit Discharge') {
                   additionalInfoSection.style.display = 'block';
                   toterFields.style.display = 'none';
                   bulkPickupFields.style.display = 'none';
@@ -4633,7 +4633,7 @@
               pollutionFields.style.display = 'none';
               setToterFieldsRequired(false);
               setPollutionFieldsRequired(false);
-            } else if (selectedRequestType === 'Suspected Pollution, Illicit Discharge, or Spill') {
+            } else if (selectedRequestType === 'Illicit Discharge') {
               console.log('💡 Showing Pollution fields');
               additionalInfoSection.style.display = 'block';
               toterFields.style.display = 'none';
