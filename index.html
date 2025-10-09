@@ -3376,7 +3376,7 @@
       function checkAppVersion() {
         const storedVersion = localStorage.getItem("appVersion");
         if (storedVersion !== APP_VERSION) {
-          console.log(`App updated from ${storedVersion || 'unknown'} to ${APP_VERSION}, clearing cache...`);
+          // console.log(`App updated from ${storedVersion || 'unknown'} to ${APP_VERSION}, clearing cache...`);
           clearStoredTokens();
           localStorage.setItem("appVersion", APP_VERSION);
           return true; // Cache was cleared
@@ -4438,7 +4438,7 @@
                   clearPollutionFields();
                   setToterFieldsRequired(true);
                   setPollutionFieldsRequired(false);
-                } else if (value === 'Bulk Pick Up') {
+                } else if (value === 'Bulk Pick Up - No Charge') {
                   additionalInfoSection.style.display = 'block';
                   toterFields.style.display = 'none';
                   bulkPickupFields.style.display = 'block';
@@ -4525,7 +4525,7 @@
                     }
                   }
                 } catch (error) {
-                  console.log('No valid stored token, will authenticate on form submission');
+                  // console.log('No valid stored token, will authenticate on form submission');
                 }
               }
             }
@@ -4600,29 +4600,14 @@
             additionalSections.style.display = "block";
           }
 
-          // Debug: Log the selected request type
-          console.log('🔍 showStep2 - selectedRequestType:', selectedRequestType);
-
           const additionalInfoSection = document.getElementById('additionalInfoSection');
           const toterFields = document.getElementById('toterFields');
           const bulkPickupFields = document.getElementById('bulkPickupFields');
           const parkConcernFields = document.getElementById('parkConcernFields');
           const pollutionFields = document.getElementById('pollutionFields');
           
-          // Debug: Log if elements are found
-          console.log('🔍 Elements found:', {
-            additionalInfoSection: !!additionalInfoSection,
-            toterFields: !!toterFields,
-            bulkPickupFields: !!bulkPickupFields,
-            parkConcernFields: !!parkConcernFields,
-            pollutionFields: !!pollutionFields
-          });
-          
           if (additionalInfoSection && toterFields && bulkPickupFields && parkConcernFields && pollutionFields) {
-            console.log('✅ All elements found, processing request type:', selectedRequestType);
-            
             if (selectedRequestType === 'Bin Request - Repair/Replace') {
-              console.log('💡 Showing Toter/Bin fields');
               additionalInfoSection.style.display = 'block';
               toterFields.style.display = 'block';
               bulkPickupFields.style.display = 'none';
@@ -4630,8 +4615,7 @@
               pollutionFields.style.display = 'none';
               setToterFieldsRequired(true);
               setPollutionFieldsRequired(false);
-            } else if (selectedRequestType === 'Bulk Pick Up') {
-              console.log('💡 Showing Bulk Pickup fields');
+            } else if (selectedRequestType === 'Bulk Pick Up - No Charge') {
               additionalInfoSection.style.display = 'block';
               toterFields.style.display = 'none';
               bulkPickupFields.style.display = 'block';
@@ -4640,7 +4624,6 @@
               setToterFieldsRequired(false);
               setPollutionFieldsRequired(false);
             } else if (selectedRequestType === 'Park Concern') {
-              console.log('💡 Showing Park Concern fields');
               additionalInfoSection.style.display = 'block';
               toterFields.style.display = 'none';
               bulkPickupFields.style.display = 'none';
@@ -4649,7 +4632,6 @@
               setToterFieldsRequired(false);
               setPollutionFieldsRequired(false);
             } else if (selectedRequestType === 'Illicit Discharge') {
-              console.log('💡 Showing Pollution fields');
               additionalInfoSection.style.display = 'block';
               toterFields.style.display = 'none';
               bulkPickupFields.style.display = 'none';
@@ -4659,7 +4641,6 @@
               setToterFieldsRequired(false);
               setPollutionFieldsRequired(true);
             } else {
-              console.log('💡 Hiding all additional fields (default)');
               additionalInfoSection.style.display = 'none';
               toterFields.style.display = 'none';
               bulkPickupFields.style.display = 'none';
@@ -4669,7 +4650,7 @@
               setPollutionFieldsRequired(false);
             }
           } else {
-            console.error('❌ Some elements not found! Cannot show additional fields.');
+            // console.error('Some elements not found! Cannot show additional fields.');
           }
 
           setTimeout(() => {
@@ -7062,7 +7043,7 @@
               try {
                 grecaptcha.reset(stepTransitionRecaptchaId);
               } catch (e) {
-                console.log('Step 1 reCAPTCHA reset skipped');
+                // console.log('Step 1 reCAPTCHA reset skipped');
               }
             }
             
@@ -7071,7 +7052,7 @@
               try {
                 grecaptcha.reset(formSubmissionRecaptchaId);
               } catch (e) {
-                console.log('Step 2 reCAPTCHA reset skipped');
+                // console.log('Step 2 reCAPTCHA reset skipped');
               }
             }
             
