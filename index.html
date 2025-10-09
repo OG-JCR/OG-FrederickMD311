@@ -2009,7 +2009,8 @@
             </div>
           </div>
 
-          <!-- Step 1 reCAPTCHA for queryreport access -->
+          <!-- Step 1 reCAPTCHA for queryreport access - DISABLED -->
+          <!--
           <div class="form-section" style="text-align: center; margin: 2rem 0;">
             <div class="form-help" style="margin-bottom: 1rem;">
               <i class="bi bi-shield-check"></i>
@@ -2017,15 +2018,16 @@
             </div>
             <div id="step-transition-recaptcha"></div>
           </div>
+          -->
 
           <div class="submit-section" style="display: flex; justify-content: center; flex-direction: column; align-items: center;">
-            <button type="submit" class="continue-button" id="continueButton" disabled>
+            <button type="submit" class="continue-button" id="continueButton">
               <i class="bi bi-arrow-right"></i>
               Continue to Details
             </button>
             <div class="form-help" style="max-width: 500px; margin: 0 auto;">
               <i class="bi bi-info-circle"></i>
-              <span>Complete the security verification above to continue with your request.</span>
+              <span>Select a service type above to continue with your request.</span>
             </div>
           </div>
         </form>
@@ -2982,9 +2984,9 @@
       // reCAPTCHA load callback
       window.onRecaptchaLoad = function() {
         recaptchaReady = true;
-        
-        // Render step transition reCAPTCHA (for queryreport access)
-        renderStepTransitionRecaptcha();
+
+        // Render step transition reCAPTCHA (for queryreport access) - DISABLED
+        // renderStepTransitionRecaptcha();
       };
       
       // Function to render step transition reCAPTCHA (visible checkbox for queryreport access)
@@ -4421,17 +4423,24 @@
           try {
             selectedRequestType = requestType;
             
-            // Check if step transition reCAPTCHA was completed
-            
-            if (userToken) {
-              showStep2();
-              // Render form submission reCAPTCHA
-              setTimeout(() => {
-                renderFormSubmissionRecaptcha();
-              }, 500);
-            } else {
-              showError('Please complete the security verification above to continue.');
+            // reCAPTCHA disabled - authenticate automatically if no token exists
+            if (!userToken) {
+              // Try to authenticate without reCAPTCHA
+              const authenticated = await authenticateWithoutRecaptcha();
+              if (!authenticated) {
+                showError('Unable to authenticate. Please try again.');
+                continueButton.disabled = false;
+                continueButton.innerHTML = '<i class="bi bi-arrow-right"></i> Continue to Details';
+                return;
+              }
             }
+            
+            showStep2();
+            // Render form submission reCAPTCHA
+            setTimeout(() => {
+              renderFormSubmissionRecaptcha();
+            }, 500);
+            
           } catch (error) {
             showError('There was an error processing your request. Please try again.');
           } finally {
@@ -4496,14 +4505,29 @@
             additionalSections.style.display = "block";
           }
 
+          // Debug: Log the selected request type
+          console.log('🔍 showStep2 - selectedRequestType:', selectedRequestType);
+
           const additionalInfoSection = document.getElementById('additionalInfoSection');
           const toterFields = document.getElementById('toterFields');
           const bulkPickupFields = document.getElementById('bulkPickupFields');
           const parkConcernFields = document.getElementById('parkConcernFields');
           const pollutionFields = document.getElementById('pollutionFields');
           
+          // Debug: Log if elements are found
+          console.log('🔍 Elements found:', {
+            additionalInfoSection: !!additionalInfoSection,
+            toterFields: !!toterFields,
+            bulkPickupFields: !!bulkPickupFields,
+            parkConcernFields: !!parkConcernFields,
+            pollutionFields: !!pollutionFields
+          });
+          
           if (additionalInfoSection && toterFields && bulkPickupFields && parkConcernFields && pollutionFields) {
+            console.log('✅ All elements found, processing request type:', selectedRequestType);
+            
             if (selectedRequestType === 'Toter Repair or Replace') {
+              console.log('💡 Showing Toter fields');
               additionalInfoSection.style.display = 'block';
               toterFields.style.display = 'block';
               bulkPickupFields.style.display = 'none';
@@ -4512,6 +4536,7 @@
               setToterFieldsRequired(true);
               setPollutionFieldsRequired(false);
             } else if (selectedRequestType === 'Bulk Pick Up') {
+              console.log('💡 Showing Bulk Pickup fields');
               additionalInfoSection.style.display = 'block';
               toterFields.style.display = 'none';
               bulkPickupFields.style.display = 'block';
@@ -4520,6 +4545,7 @@
               setToterFieldsRequired(false);
               setPollutionFieldsRequired(false);
             } else if (selectedRequestType === 'Park Concern') {
+              console.log('💡 Showing Park Concern fields');
               additionalInfoSection.style.display = 'block';
               toterFields.style.display = 'none';
               bulkPickupFields.style.display = 'none';
@@ -4528,6 +4554,7 @@
               setToterFieldsRequired(false);
               setPollutionFieldsRequired(false);
             } else if (selectedRequestType === 'Suspected Pollution, Illicit Discharge, or Spill') {
+              console.log('💡 Showing Pollution fields');
               additionalInfoSection.style.display = 'block';
               toterFields.style.display = 'none';
               bulkPickupFields.style.display = 'none';
@@ -4537,6 +4564,7 @@
               setToterFieldsRequired(false);
               setPollutionFieldsRequired(true);
             } else {
+              console.log('💡 Hiding all additional fields (default)');
               additionalInfoSection.style.display = 'none';
               toterFields.style.display = 'none';
               bulkPickupFields.style.display = 'none';
@@ -4545,6 +4573,8 @@
               setToterFieldsRequired(false);
               setPollutionFieldsRequired(false);
             }
+          } else {
+            console.error('❌ Some elements not found! Cannot show additional fields.');
           }
 
           setTimeout(() => {
