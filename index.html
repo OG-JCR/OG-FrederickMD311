@@ -3129,13 +3129,10 @@
         try {
           // Check if already rendered
           if (formSubmissionRecaptchaId !== null) {
-            console.log('🔄 reCAPTCHA already rendered with ID:', formSubmissionRecaptchaId);
             // Reset existing widget instead of re-rendering
             try {
               grecaptcha.reset(formSubmissionRecaptchaId);
-              console.log('✅ reCAPTCHA reset successfully');
             } catch (e) {
-              console.log('⚠️ Could not reset, will re-render');
               formSubmissionRecaptchaId = null;
             }
           }
@@ -3144,7 +3141,6 @@
           if (formSubmissionRecaptchaId === null) {
             const container = document.getElementById('visible-recaptcha');
             if (container && container.children.length > 0) {
-              console.log('⚠️ reCAPTCHA container has children, clearing...');
               container.innerHTML = '';
             }
             
@@ -3154,10 +3150,9 @@
               'expired-callback': onRecaptchaExpired,
               'error-callback': onRecaptchaError
             });
-            console.log('✅ reCAPTCHA rendered with ID:', formSubmissionRecaptchaId);
           }
         } catch (error) {
-          console.error("❌ Failed to render form submission reCAPTCHA:", error);
+          console.error("Failed to render form submission reCAPTCHA:", error);
         }
       }
       
@@ -3198,19 +3193,14 @@
       
       // Visible reCAPTCHA callbacks (for form submission)
       window.onRecaptchaSuccess = function(token) {
-        console.log('✅ onRecaptchaSuccess called with token:', token ? token.substring(0, 20) + '...' : 'null');
-        
         // Store the reCAPTCHA token with timestamp
         setRecaptchaToken(token);
-        console.log('📝 Token stored');
         
         // Check if all required fields are filled before enabling
         updateSubmitButtonState();
-        console.log('🔄 Submit button state updated');
         
         // Generate access token
         generatePublicTokenWithRecaptcha(token);
-        console.log('🔑 Generating access token');
       };
       
       window.onRecaptchaExpired = function() {
@@ -6733,20 +6723,9 @@
 
           try {
             // Check if form submission reCAPTCHA is completed
-            console.log('🔍 reCAPTCHA validation:');
-            console.log('  - grecaptcha defined:', typeof grecaptcha !== 'undefined');
-            console.log('  - formSubmissionRecaptchaId:', formSubmissionRecaptchaId);
-            
-            // Use our stored token instead of querying the widget
             const storedToken = getRecaptchaToken();
-            console.log('  - storedToken:', storedToken ? storedToken.substring(0, 20) + '...' : 'null');
-            
-            // Also check widget response for debugging
-            const widgetResponse = formSubmissionRecaptchaId !== null ? grecaptcha.getResponse(formSubmissionRecaptchaId) : null;
-            console.log('  - widgetResponse:', widgetResponse ? widgetResponse.substring(0, 20) + '...' : 'null');
             
             if (!storedToken) {
-              console.log('❌ reCAPTCHA validation failed - no stored token');
               errorMessage.style.display = "block";
               errorMessage.innerHTML = `
                 <i class="bi bi-exclamation-triangle me-2"></i>
@@ -6755,7 +6734,6 @@
               errorMessage.scrollIntoView({ behavior: "smooth" });
               return false;
             }
-            console.log('✅ reCAPTCHA validation passed');
             
             
             if (!isLocationValid || !selectedCoordinates || 
