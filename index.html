@@ -3747,7 +3747,7 @@
             Value: serviceRequestData.additionalInfo.toterSize || ""
           });
           
-        } else if (serviceRequestData.requestInfo.requestType === 'Bulk Pick Up - No Charge') {
+        } else if (serviceRequestData.requestInfo.requestType === 'Bulk Pick Up') {
           
           fieldsList.push({
             Name: "no_charge_or_prepaid",
@@ -4240,7 +4240,7 @@
                   clearPollutionFields();
                   setToterFieldsRequired(true);
                   setPollutionFieldsRequired(false);
-                } else if (value === 'Bulk Pick Up - No Charge') {
+                } else if (value === 'Bulk Pick Up') {
                   additionalInfoSection.style.display = 'block';
                   toterFields.style.display = 'none';
                   bulkPickupFields.style.display = 'block';
@@ -4417,7 +4417,7 @@
               pollutionFields.style.display = 'none';
               setToterFieldsRequired(true);
               setPollutionFieldsRequired(false);
-            } else if (selectedRequestType === 'Bulk Pick Up - No Charge') {
+            } else if (selectedRequestType === 'Bulk Pick Up') {
               additionalInfoSection.style.display = 'block';
               toterFields.style.display = 'none';
               bulkPickupFields.style.display = 'block';
