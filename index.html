@@ -98,6 +98,54 @@
         box-shadow: var(--shadow-md);
       }
 
+      /* Info Banner */
+      .info-banner {
+        background: #ffffff;
+        border: 2px solid #e5e7eb;
+        border-left: 5px solid #dc2626;
+        padding: 1.5rem 1.75rem;
+        border-radius: 0.75rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+
+      .info-banner-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        color: #dc2626;
+      }
+
+      .info-banner-title i {
+        font-size: 1.75rem;
+        color: #dc2626;
+      }
+
+      .info-banner-text {
+        font-size: 1rem;
+        line-height: 1.6;
+        margin: 0;
+        color: #374151;
+      }
+
+      .info-banner-phone {
+        font-weight: 600;
+        color: #dc2626;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+      }
+
+      .info-banner-phone:hover {
+        color: #991b1b;
+        text-decoration: underline;
+        background: #fee2e2;
+      }
+
       .header-content {
         max-width: 1200px;
         margin: 0 auto;
@@ -1887,6 +1935,17 @@
 
     <!-- Main Content -->
     <main class="main-content">
+      <!-- Info Banner -->
+      <div class="info-banner">
+        <div class="info-banner-title">
+          <i class="bi bi-megaphone-fill"></i>
+          Report a Problem
+        </div>
+        <p class="info-banner-text">
+          Is there a problem you wish to report to City Officials? If so, select your problem and fill out the information and City staff will follow-up with you. If this is an urgent problem or is after hours please call the switchboard at <a href="tel:301-600-1160" class="info-banner-phone">301-600-1160</a>.
+        </p>
+      </div>
+
       <!-- Step Indicator -->
       <div class="step-indicator">
         <div class="step active" id="step1Indicator">
@@ -1985,7 +2044,7 @@
                     <i class="bi bi-trash"></i> Waste Collection
                   </li>
                   <li><button type="button" class="service-list-btn" data-value="Missed Trash"><i class="bi bi-trash3"></i> Missed Trash or Yard Waste</button></li>
-                  <li><button type="button" class="service-list-btn" data-value="Bulk Pick Up - No Charge"><i class="bi bi-box-seam"></i> Bulk Pick Up</button></li>
+                  <li><button type="button" class="service-list-btn" data-value="Bulk Pick Up"><i class="bi bi-box-seam"></i> Bulk Pick Up</button></li>
                   <li><button type="button" class="service-list-btn" data-value="Bin Request - Repair/Replace"><i class="bi bi-recycle"></i> Toter Repair or Replace</button></li>
                   <!-- <li><button type="button" class="service-list-btn" data-value="Other Waste Collection Issue"><i class="bi bi-trash2"></i> Other Waste Collection Issue</button></li> -->
                   
@@ -3070,7 +3129,7 @@
       // reCAPTCHA load callback
       window.onRecaptchaLoad = function() {
         recaptchaReady = true;
-
+        
         // Render step transition reCAPTCHA (for queryreport access) - DISABLED
         // renderStepTransitionRecaptcha();
       };
@@ -3144,12 +3203,12 @@
               container.innerHTML = '';
             }
             
-            formSubmissionRecaptchaId = grecaptcha.render('visible-recaptcha', {
-              'sitekey': RECAPTCHA_SITE_KEY,
-              'callback': onRecaptchaSuccess,
-              'expired-callback': onRecaptchaExpired,
-              'error-callback': onRecaptchaError
-            });
+          formSubmissionRecaptchaId = grecaptcha.render('visible-recaptcha', {
+            'sitekey': RECAPTCHA_SITE_KEY,
+            'callback': onRecaptchaSuccess,
+            'expired-callback': onRecaptchaExpired,
+            'error-callback': onRecaptchaError
+          });
           }
         } catch (error) {
           console.error("Failed to render form submission reCAPTCHA:", error);
@@ -4273,11 +4332,11 @@
               }
             }
             
-            showStep2();
-            // Render form submission reCAPTCHA
-            setTimeout(() => {
-              renderFormSubmissionRecaptcha();
-            }, 500);
+              showStep2();
+              // Render form submission reCAPTCHA
+              setTimeout(() => {
+                renderFormSubmissionRecaptcha();
+              }, 500);
             
           } catch (error) {
             showError('There was an error processing your request. Please try again.');
@@ -5124,7 +5183,7 @@
             addressInput.value = '';
             addressInput.placeholder = 'Start typing an address in Frederick, MD...';
           }
-          
+
           if (esriMapView && currentMarker) {
             esriMapView.graphics.remove(currentMarker);
             currentMarker = null;
@@ -5148,7 +5207,7 @@
           
           // Show message that existing requests are disabled
           showInfo('Existing requests display is currently disabled.', 'Feature Unavailable');
-          return;
+            return;
 
           const toggleBtn = document.getElementById('toggleExistingRequests');
           const isVisible = existingRequestsLayer.visible;
@@ -5710,12 +5769,12 @@
 
           const filePromises = filesToProcess.map((file, index) => {
             return fileToBase64(file, false).then((result) => {
-              const fileId = Date.now() + Math.random() + index;
-              const fileObj = {
-                id: fileId,
-                file: file,
+            const fileId = Date.now() + Math.random() + index;
+            const fileObj = {
+              id: fileId,
+              file: file,
                 name: result.name,
-                type: file.type,
+              type: file.type,
                 url: result.value,
                 base64: result.value.split(',')[1]
               };
@@ -6666,12 +6725,12 @@
             if (address && address.trim() !== "") {
               document.getElementById("locationValue").textContent = address;
             } else {
-              const lat = parseFloat(serviceRequestData.locationInfo.latitude);
-              const lng = parseFloat(serviceRequestData.locationInfo.longitude);
-              if (lat !== 0 && lng !== 0) {
-                document.getElementById("locationValue").textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-              } else {
-                document.getElementById("locationValue").textContent = "Location not specified";
+            const lat = parseFloat(serviceRequestData.locationInfo.latitude);
+            const lng = parseFloat(serviceRequestData.locationInfo.longitude);
+            if (lat !== 0 && lng !== 0) {
+              document.getElementById("locationValue").textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            } else {
+              document.getElementById("locationValue").textContent = "Location not specified";
               }
             }
             
