@@ -2623,7 +2623,7 @@
                 </div>
                 <div class="col-md-6">
                   <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="estimatedQuantity" class="form-label">Estimated Quantity</label>
+                    <label for="estimatedQuantity" class="form-label">Estimated Quantity (in gallons)</label>
                     <input
                       type="number"
                       id="estimatedQuantity"
@@ -2694,6 +2694,36 @@
             </div>
           </div>
 
+           <!-- Additional Comments -->
+           <div class="form-section">
+            <div class="section-header">
+              <div class="section-icon">
+                <i class="bi bi-chat-left-text"></i>
+              </div>
+              <h3>Request Details</h3>
+            </div>
+
+            <div class="form-group">
+              <label for="requestDescription" class="form-label">
+                Request Description <span class="required">*</span>
+              </label>
+              <textarea
+                id="requestDescription"
+                name="requestDescription"
+                class="form-control"
+                rows="5"
+                placeholder="Please provide any additional details about the issue, such as size, severity, safety concerns, or specific location details that would help our team..."
+                required
+              ></textarea>
+              <div class="form-help">
+                <i class="bi bi-info-circle"></i>
+                <span>
+                  Please describe the issue in detail to help our team understand and resolve it more effectively
+                </span>
+              </div>
+            </div>
+          </div>
+
           <!-- Photos/File Attachments -->
           <div class="form-section">
             <div class="section-header">
@@ -2726,36 +2756,6 @@
                 <i class="bi bi-info-circle"></i>
                                 <span>
                    Photos help our team assess the issue quickly. Accepted formats: JPG, PNG, GIF, WebP, HEIC, HEIF, PDF. Max 3 files, 10MB each.
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Additional Comments -->
-          <div class="form-section">
-            <div class="section-header">
-              <div class="section-icon">
-                <i class="bi bi-chat-left-text"></i>
-              </div>
-              <h3>Request Details</h3>
-            </div>
-
-            <div class="form-group">
-              <label for="requestDescription" class="form-label">
-                Request Description <span class="required">*</span>
-              </label>
-              <textarea
-                id="requestDescription"
-                name="requestDescription"
-                class="form-control"
-                rows="5"
-                placeholder="Please provide any additional details about the issue, such as size, severity, safety concerns, or specific location details that would help our team..."
-                required
-              ></textarea>
-              <div class="form-help">
-                <i class="bi bi-info-circle"></i>
-                <span>
-                  Please describe the issue in detail to help our team understand and resolve it more effectively
                 </span>
               </div>
             </div>
