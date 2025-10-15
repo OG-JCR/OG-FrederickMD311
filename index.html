@@ -792,6 +792,10 @@
         opacity: 0;
         visibility: hidden;
         transition: all 0.3s ease;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 1rem;
+        touch-action: pan-y;
       }
 
       .success-modal.show {
@@ -804,10 +808,15 @@
         border-radius: 1.5rem;
         max-width: 600px;
         width: 90%;
+        max-height: calc(100vh - 2rem);
         box-shadow: 0 20px 80px rgba(0,0,0,0.4);
         transform: scale(0.8) translateY(20px);
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         border: 2px solid var(--success-green);
+        margin: auto;
+        display: flex;
+        flex-direction: column;
+        position: relative;
       }
 
       .success-modal.show .success-modal-content {
@@ -821,6 +830,7 @@
         color: white;
         border-radius: 1.5rem 1.5rem 0 0;
         position: relative;
+        flex-shrink: 0;
       }
 
       .close-btn {
@@ -839,11 +849,16 @@
         cursor: pointer;
         font-size: 1.2rem;
         transition: all 0.3s ease;
+        z-index: 10;
       }
 
       .close-btn:hover {
         background: rgba(255,255,255,0.3);
         transform: scale(1.1);
+      }
+
+      .close-btn:active {
+        transform: scale(0.95);
       }
 
       .success-icon {
@@ -865,6 +880,12 @@
 
       .modal-body {
         padding: 1rem;
+        overflow-y: auto;
+        overflow-x: hidden;
+        flex: 1;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+        overscroll-behavior: contain;
       }
 
       .request-details {
@@ -937,13 +958,18 @@
       }
 
       .modal-actions {
-        padding: 0 1rem 1rem 1rem;
+        padding: 1rem;
         text-align: center;
+        border-top: 1px solid var(--border-color);
+        background: white;
+        border-radius: 0 0 1.5rem 1.5rem;
+        flex-shrink: 0;
       }
 
       .action-btn {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 0.75rem;
         background: linear-gradient(135deg, var(--emerald-primary), var(--teal-water));
         color: white;
@@ -953,6 +979,8 @@
         font-weight: 600;
         font-size: 1.1rem;
         transition: all 0.3s ease;
+        width: 100%;
+        max-width: 300px;
       }
 
       .action-btn:hover {
@@ -960,6 +988,109 @@
         box-shadow: 0 8px 25px rgba(0, 166, 147, 0.3);
         color: white;
         text-decoration: none;
+      }
+
+      .action-btn:active {
+        transform: translateY(0);
+      }
+
+      /* Mobile-specific modal improvements */
+      @media (max-width: 768px) {
+        .success-modal {
+          padding: 0.5rem;
+          align-items: flex-start;
+        }
+
+        .success-modal-content {
+          width: 95%;
+          max-height: calc(100vh - 1rem);
+          margin: 0.5rem auto;
+        }
+
+        .success-modal-header {
+          padding: 1rem;
+        }
+
+        .close-btn {
+          width: 36px;
+          height: 36px;
+          font-size: 1.1rem;
+          top: 0.75rem;
+          right: 0.75rem;
+        }
+
+        .success-icon {
+          font-size: 2.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .success-modal-header h3 {
+          font-size: 1.25rem;
+        }
+
+        .success-modal-header p {
+          font-size: 0.9rem;
+        }
+
+        .modal-body {
+          padding: 0.75rem;
+        }
+
+        .request-details,
+        .next-steps {
+          padding: 0.75rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .detail-row {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.25rem;
+          padding: 0.5rem 0;
+        }
+
+        .detail-value {
+          max-width: 100%;
+        }
+
+        .next-steps h4 {
+          font-size: 1rem;
+        }
+
+        .next-steps li {
+          font-size: 0.9rem;
+        }
+
+        .modal-actions {
+          padding: 0.75rem;
+        }
+
+        .action-btn {
+          padding: 0.875rem 1.5rem;
+          font-size: 1rem;
+          max-width: 100%;
+        }
+      }
+
+      /* Extra small mobile devices */
+      @media (max-width: 375px) {
+        .success-modal {
+          padding: 0.25rem;
+        }
+
+        .success-modal-content {
+          width: 98%;
+          max-height: calc(100vh - 0.5rem);
+          border-radius: 1rem;
+        }
+
+        .success-modal-header {
+          border-radius: 1rem 1rem 0 0;
+        }
+
+        .modal-actions {
+          border-radius: 0 0 1rem 1rem;
+        }
       }
 
       /* Photo Upload Styles */
@@ -2057,7 +2188,7 @@
                   <!-- <li><button type="button" class="service-list-btn" data-value="Water Leak"><i class="bi bi-moisture"></i> Water Leak</button></li> -->
                   <li><button type="button" class="service-list-btn" data-value="Sewer Backup"><i class="bi bi-funnel"></i> Sewer Back Up</button></li>
                   <li><button type="button" class="service-list-btn" data-value="General Water Issue"><i class="bi bi-water"></i> Other Water Issue</button></li>
-                  <li><button type="button" class="service-list-btn" data-value="Sewer"><i class="bi bi-funnel-fill"></i> Other Sewer Issue</button></li>
+                  <li><button type="button" class="service-list-btn" data-value="General Sewer Issue"><i class="bi bi-funnel-fill"></i> Other Sewer Issue</button></li>
                 </ul>
               </div>
 
@@ -2666,6 +2797,32 @@
                   </div>
                 </div>
               </div>
+
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="areaOfConcern" class="form-label">Area of Concern <span id="areaOfConcernAsterisk" class="required" style="display: none;">*</span></label>
+                <select
+                  id="areaOfConcern"
+                  name="areaOfConcern"
+                  class="form-control"
+                  required
+                >
+                  <option value="">Select area of concern...</option>
+                  <option value="Accident">Accident</option>
+                  <option value="Dumping Liquids into Inlets, Streams, or Roadways">Dumping Liquids into Inlets, Streams, or Roadways</option>
+                  <option value="Gasoline Spill">Gasoline Spill</option>
+                  <option value="Leaking Car">Leaking Car</option>
+                  <option value="Liquid or Grease Leaking from Dumpster">Liquid or Grease Leaking from Dumpster</option>
+                  <option value="Mud Flowing from Construction Site">Mud Flowing from Construction Site</option>
+                  <option value="Salt Pile or Overuse">Salt Pile or Overuse</option>
+                  <option value="Sediment or Stone build up">Sediment or Stone build up</option>
+                  <option value="Stream Water Quality (Odors, Colors, Trash, etc.)">Stream Water Quality (Odors, Colors, Trash, etc.)</option>
+                  <option value="Unusual Flow in Stormwater Pipes or Outfalls">Unusual Flow in Stormwater Pipes or Outfalls</option>
+                  <option value="Vehicle Washing">Vehicle Washing</option>
+                  <option value="Wash Waste Water">Wash Waste Water</option>
+                  <option value="Water Leak">Water Leak</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
               
               <div class="row">
                 <div class="col-md-6">
@@ -2707,32 +2864,6 @@
                     </select>
                   </div>
                 </div>
-              </div>
-
-              <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="areaOfConcern" class="form-label">Area of Concern <span id="areaOfConcernAsterisk" class="required" style="display: none;">*</span></label>
-                <select
-                  id="areaOfConcern"
-                  name="areaOfConcern"
-                  class="form-control"
-                  required
-                >
-                  <option value="">Select area of concern...</option>
-                  <option value="Accident">Accident</option>
-                  <option value="Dumping Liquids into Inlets, Streams, or Roadways">Dumping Liquids into Inlets, Streams, or Roadways</option>
-                  <option value="Gasoline Spill">Gasoline Spill</option>
-                  <option value="Leaking Car">Leaking Car</option>
-                  <option value="Liquid or Grease Leaking from Dumpster">Liquid or Grease Leaking from Dumpster</option>
-                  <option value="Mud Flowing from Construction Site">Mud Flowing from Construction Site</option>
-                  <option value="Salt Pile or Overuse">Salt Pile or Overuse</option>
-                  <option value="Sediment or Stone build up">Sediment or Stone build up</option>
-                  <option value="Stream Water Quality (Odors, Colors, Trash, etc.)">Stream Water Quality (Odors, Colors, Trash, etc.)</option>
-                  <option value="Unusual Flow in Stormwater Pipes or Outfalls">Unusual Flow in Stormwater Pipes or Outfalls</option>
-                  <option value="Vehicle Washing">Vehicle Washing</option>
-                  <option value="Wash Waste Water">Wash Waste Water</option>
-                  <option value="Water Leak">Water Leak</option>
-                  <option value="Other">Other</option>
-                </select>
               </div>
 
               <div class="form-group" style="margin-bottom: 1rem;">
@@ -6778,12 +6909,28 @@
 
           const successModal = document.getElementById("successModal");
           successModal.classList.add("show");
+          
+          // Prevent body scrolling on mobile
+          document.body.style.overflow = 'hidden';
+          document.body.style.position = 'fixed';
+          document.body.style.width = '100%';
+          document.body.style.top = `-${window.scrollY}px`;
+          
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function closeSuccessModal() {
           const successModal = document.getElementById("successModal");
           successModal.classList.remove("show");
+          
+          // Restore body scrolling
+          const scrollY = document.body.style.top;
+          document.body.style.overflow = '';
+          document.body.style.position = '';
+          document.body.style.width = '';
+          document.body.style.top = '';
+          window.scrollTo(0, parseInt(scrollY || '0') * -1);
+          
           setTimeout(() => {
             showCompletionMessage();
           }, 300);
@@ -6891,6 +7038,24 @@
           if (event.key === 'Escape') {
             closeSuccessModal();
           }
+        });
+
+        // Prevent scrolling on modal overlay (only allow scrolling within modal content)
+        window.addEventListener('DOMContentLoaded', function() {
+          const successModal = document.getElementById("successModal");
+          const modalContent = successModal.querySelector('.success-modal-content');
+          
+          successModal.addEventListener('touchmove', function(event) {
+            // Only prevent default if touch is on the overlay, not the content
+            if (event.target === successModal) {
+              event.preventDefault();
+            }
+          }, { passive: false });
+          
+          // Allow scrolling within modal content
+          modalContent.addEventListener('touchmove', function(event) {
+            event.stopPropagation();
+          }, { passive: true });
         });
 
 
