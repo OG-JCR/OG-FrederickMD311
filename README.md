@@ -245,7 +245,7 @@ The form uses CSS custom properties for easy theme customization:
 - Search delay: 300ms (debounced)
 - Min characters: 3
 - Max suggestions: 8
-- Geographic bias: Eufaula, AL center coordinates
+- Geographic bias: Frederick, MD center coordinates
 
 ---
 
