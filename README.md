@@ -719,7 +719,7 @@ console.error('Error:', error);
 - reCAPTCHA: https://developers.google.com/recaptcha/docs/
 
 **Support Contacts:**
-- **Technical Support:** [Your support email/phone]
+- **Technical Support:** https://opengov.my.site.com/support/s/
 - **ESRI Support:** https://support.esri.com/
 - **Google reCAPTCHA:** https://support.google.com/recaptcha/
 
