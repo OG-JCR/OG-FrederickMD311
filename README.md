@@ -714,6 +714,7 @@ console.error('Error:', error);
 ### Getting Help:
 
 **Documentation:**
+- Ignatius Public API (Goverment App Builder): https://developers.ignatius.io/
 - ESRI ArcGIS: https://developers.arcgis.com/javascript/
 - Bootstrap: https://getbootstrap.com/docs/
 - reCAPTCHA: https://developers.google.com/recaptcha/docs/
