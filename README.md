@@ -89,9 +89,10 @@ This is a **311 Service Request Form** for the City of Frederick, Maryland. The 
   - Bot prevention
   
 - **Ignatius API** (https://api.ignatius.io)
-  - Backend data storage
+  - Backend data storage (API endpoint only)
   - Request submission
   - Report generation
+  - **Note:** Portal access is via apps.opengov.com
 
 ### Libraries:
 - **CryptoJS** - Encryption for secure data transmission
@@ -184,9 +185,11 @@ const REQUEST_EAM_REPORT_REPORT_ID = "vygamxbq7"; // Request EAM Report
 ```
 
 **To Configure:**
-- Replace `SERVER_URL_PAGE` with your backend API URL
-- Update `PUBLIC_REQUESTS_TABLEKEY` with your table identifier
-- Update `REQUEST_EAM_REPORT_REPORT_ID` with your report ID
+- Replace `SERVER_URL_PAGE` with your backend API URL (this is the API endpoint, not the portal URL)
+- Update `PUBLIC_REQUESTS_TABLEKEY` with your table identifier (found in apps.opengov.com)
+- Update `REQUEST_EAM_REPORT_REPORT_ID` with your report ID (found in apps.opengov.com)
+
+**Note:** The portal for managing tables and configurations is accessed at **apps.opengov.com**, while `api.ignatius.io` is the API endpoint used by the form for data submission.
 
 ---
 
@@ -715,13 +718,12 @@ console.error('Error:', error);
 ### Getting Help:
 
 **Documentation:**
-- Ignatius Public API (Goverment App Builder): https://developers.ignatius.io/
 - ESRI ArcGIS: https://developers.arcgis.com/javascript/
 - Bootstrap: https://getbootstrap.com/docs/
 - reCAPTCHA: https://developers.google.com/recaptcha/docs/
 
 **Support Contacts:**
-- **Technical Support:** https://opengov.my.site.com/support/s/
+- **Technical Support:** [Your support email/phone]
 - **ESRI Support:** https://support.esri.com/
 - **Google reCAPTCHA:** https://support.google.com/recaptcha/
 
@@ -818,7 +820,7 @@ Before adding or modifying fields, verify the following:
   - Boolean (Yes/No)
 
 #### 2. **Does the field exist in GAB (Ignatius)?**
-- [ ] Log into GAB (api.ignatius.io)
+- [ ] Log into GAB (apps.opengov.com)
 - [ ] Navigate to the **Public Requests** table
 - [ ] Check if the field exists in the table schema
 - [ ] Verify the field name matches EAM exactly
@@ -983,7 +985,7 @@ if (serviceRequestData.requestInfo.requestType === 'Bin Request - Repair/Replace
 
 This is the most critical step for the integration to work.
 
-1. **Log into GAB** (api.ignatius.io)
+1. **Log into GAB** (apps.opengov.com)
 2. Navigate to **Public Requests** table
 3. Click **Automations** tab → **Webhooks**
 4. Edit the **GAB → EAM Integration** webhook
@@ -1346,7 +1348,7 @@ After making changes, follow this testing checklist:
 
 ### Best Practices
 
-1. **Always test in a development environment first** before deploying to production
+1. **Always test in a test script first** before deploying to production
 2. **Document your changes** in code comments
 3. **Use descriptive field names** that clearly indicate the field's purpose
 4. **Keep field names consistent** across all systems (Form, GAB, EAM)
