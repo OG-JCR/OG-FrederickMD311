@@ -10,9 +10,10 @@
 7. [API Integration](#api-integration)
 8. [Security](#security)
 9. [Customization Guide](#customization-guide)
-10. [Troubleshooting](#troubleshooting)
-11. [Browser Compatibility](#browser-compatibility)
-12. [Support & Maintenance](#support--maintenance)
+10. [Adding or Modifying Form Fields](#adding-or-modifying-form-fields)
+11. [Troubleshooting](#troubleshooting)
+12. [Browser Compatibility](#browser-compatibility)
+13. [Support & Maintenance](#support--maintenance)
 
 ---
 
@@ -773,6 +774,604 @@ console.error('Error:', error);
 
 ---
 
+## Adding or Modifying Form Fields
+
+This section provides step-by-step instructions for technical users who need to add new fields or modify existing fields in the 311 Service Request Form.
+
+### Overview: Form Data Flow
+
+Understanding how data flows through the system is critical before making changes:
+
+```
+User Input (HTML Form)
+    ↓
+JavaScript Collection (FormData)
+    ↓
+Service Request Data Object
+    ↓
+API Payload (fieldsList array)
+    ↓
+GAB Database (Public Requests Table)
+    ↓
+Webhook Integration
+    ↓
+EAM System
+```
+
+**Important:** Field names must match exactly across all systems (Form → GAB → EAM) for the integration to work properly.
+
+---
+
+### Prerequisites Checklist
+
+Before adding or modifying fields, verify the following:
+
+#### 1. **Does the field exist in EAM?**
+- [ ] Log into your EAM system
+- [ ] Navigate to the relevant work order or asset module
+- [ ] Verify the field name (exact spelling and capitalization matter)
+- [ ] Note if the field is:
+  - Free text (input field)
+  - Dropdown list (select field)
+  - Date/time field
+  - Number field
+  - Boolean (Yes/No)
+
+#### 2. **Does the field exist in GAB (Ignatius)?**
+- [ ] Log into GAB (api.ignatius.io)
+- [ ] Navigate to the **Public Requests** table
+- [ ] Check if the field exists in the table schema
+- [ ] Verify the field name matches EAM exactly
+- [ ] Note the field type (Text, Number, Date, Boolean, etc.)
+
+**If the field doesn't exist in GAB:**
+1. Go to Table Settings → Add New Field
+2. Use the **exact same name** as in EAM
+3. Select the appropriate field type
+4. Save the table schema
+
+#### 3. **If it's a dropdown field, do the values match?**
+- [ ] Compare dropdown options in EAM
+- [ ] Verify dropdown options in GAB match exactly
+- [ ] Ensure spelling, capitalization, and punctuation are identical
+
+**Example:**
+- ✅ Good: "Yes" in form, "Yes" in GAB, "Yes" in EAM
+- ❌ Bad: "Yes" in form, "yes" in GAB, "YES" in EAM
+
+#### 4. **Update the GAB → EAM Webhook**
+- [ ] Log into GAB
+- [ ] Navigate to **Public Requests** table
+- [ ] Click **Automations** tab
+- [ ] Click **Webhooks**
+- [ ] Edit the existing **GAB → EAM** integration webhook
+- [ ] Update the payload mapping to include your new field
+- [ ] Test the webhook with sample data
+
+---
+
+### Step-by-Step: Adding a New Field
+
+Follow these steps to add a completely new field to the form.
+
+#### **Step 1: Add the HTML Form Field**
+
+Locate where you want to add the field in `index.html`. Fields are organized by step:
+- **Step 1** (lines ~2050-2200): Service type selection
+- **Step 2** (lines ~2400-2850): Location and additional details
+
+**Example: Adding a "Priority Level" dropdown field**
+
+Search for similar fields in the HTML (e.g., search for `<select` to find dropdown examples).
+
+Add your new field:
+
+```html
+<!-- Priority Level Field -->
+<div class="form-group mb-3">
+  <label for="priorityLevel" class="form-label">
+    Priority Level <span class="required">*</span>
+  </label>
+  <select id="priorityLevel" name="priorityLevel" class="form-control form-select" required>
+    <option value="">Select priority...</option>
+    <option value="Low">Low</option>
+    <option value="Medium">Medium</option>
+    <option value="High">High</option>
+    <option value="Critical">Critical</option>
+  </select>
+  <div class="form-help">
+    Select the urgency level for this request
+  </div>
+</div>
+```
+
+**Key Points:**
+- `id` and `name` attributes should match your GAB/EAM field name (use camelCase for JavaScript, but this will be mapped later)
+- Use `class="form-control"` for text inputs
+- Use `class="form-control form-select"` for dropdowns
+- Add `required` attribute if the field is mandatory
+- Dropdown `<option value="">` must match GAB/EAM values exactly
+
+---
+
+#### **Step 2: Collect the Field Value in JavaScript**
+
+Find the form submission handler (search for `form.addEventListener("submit"` around line 6635).
+
+The form automatically collects all fields via `FormData`, but you need to add it to the `serviceRequestData` object.
+
+**For fields that apply to ALL request types:**
+
+Find the `serviceRequestData` object creation (around line 6708) and add your field:
+
+```javascript
+const serviceRequestData = {
+  requestInfo: {
+    requestType: formData.get("requestType"),
+    status: "Open",
+    submissionTime: new Date().toISOString(),
+    isAnonymous: true,
+    priorityLevel: formData.get("priorityLevel") || ""  // ADD THIS LINE
+  },
+  // ... rest of the object
+};
+```
+
+**For fields specific to certain request types:**
+
+Find the `additionalInfo` section (around line 6725):
+
+```javascript
+additionalInfo: {
+  lidDamage: formData.get("lidDamage") || "",
+  toterBodyDamage: formData.get("toterBodyDamage") || "",
+  // ... existing fields ...
+  priorityLevel: formData.get("priorityLevel") || "",  // ADD THIS LINE
+  // ... more fields
+}
+```
+
+---
+
+#### **Step 3: Add Field to API Payload**
+
+Find the `createServiceRequest` function (search for `async function createServiceRequest` around line 3809).
+
+Add your field to the `fieldsList` array:
+
+```javascript
+const fieldsList = [
+  {
+    Name: "request_category",
+    Value: serviceRequestData.requestInfo.requestType
+  },
+  // ... existing fields ...
+  {
+    Name: "priority_level",  // USE THE EXACT GAB/EAM FIELD NAME
+    Value: serviceRequestData.requestInfo.priorityLevel || ""
+  },
+  // ... more fields
+];
+```
+
+**Critical:** The `Name` property must match the exact field name in GAB and EAM. Use underscores (snake_case) as this is the typical database convention.
+
+**For conditional fields (only for specific request types):**
+
+Find the conditional logic (around line 3854) and add your field:
+
+```javascript
+if (serviceRequestData.requestInfo.requestType === 'Bin Request - Repair/Replace') {
+  fieldsList.push({
+    Name: "lid_damage_only",
+    Value: serviceRequestData.additionalInfo.lidDamage || ""
+  });
+  
+  // ADD YOUR NEW FIELD HERE
+  fieldsList.push({
+    Name: "priority_level",
+    Value: serviceRequestData.additionalInfo.priorityLevel || ""
+  });
+  
+  // ... more fields
+}
+```
+
+---
+
+#### **Step 4: Update the GAB → EAM Webhook Payload**
+
+This is the most critical step for the integration to work.
+
+1. **Log into GAB** (api.ignatius.io)
+2. Navigate to **Public Requests** table
+3. Click **Automations** tab → **Webhooks**
+4. Edit the **GAB → EAM Integration** webhook
+5. Update the payload mapping:
+
+```json
+{
+  "WorkOrderNumber": "{{request_id}}",
+  "RequestCategory": "{{request_category}}",
+  "Description": "{{description}}",
+  "PriorityLevel": "{{priority_level}}",
+  "Latitude": "{{latitude}}",
+  "Longitude": "{{longitude}}"
+}
+```
+
+**Important Notes:**
+- Use `{{field_name}}` syntax to reference GAB fields
+- The left side (e.g., `"PriorityLevel"`) is the EAM field name
+- The right side (e.g., `"{{priority_level}}"`) is the GAB field name
+- Field names must match exactly (case-sensitive)
+
+6. **Test the webhook** with sample data
+7. **Save** the webhook configuration
+
+---
+
+### Step-by-Step: Modifying an Existing Field
+
+#### **Adding a New Dropdown Option**
+
+If you need to add a new option to an existing dropdown field:
+
+**Step 1: Update the HTML**
+
+Find the dropdown field in `index.html` (search for the field's `id`):
+
+```html
+<select id="toterSize" name="toterSize" class="form-control">
+  <option value="">Select size...</option>
+  <option value="64 Gallon">64 Gallon</option>
+  <option value="96 Gallon">96 Gallon</option>
+  <option value="128 Gallon">128 Gallon</option>  <!-- ADD NEW OPTION -->
+</select>
+```
+
+**Step 2: Update GAB Field**
+
+1. Log into GAB
+2. Go to **Public Requests** table → **Table Settings**
+3. Find the field (e.g., `toter_size`)
+4. If it's a dropdown type, add the new option: `128 Gallon`
+5. Save changes
+
+**Step 3: Update EAM Field**
+
+1. Log into EAM
+2. Navigate to the corresponding field
+3. Add the same option: `128 Gallon`
+4. Save changes
+
+**Step 4: Test the Integration**
+
+1. Submit a test form with the new option
+2. Verify it appears correctly in GAB
+3. Check that the webhook sends it to EAM successfully
+4. Confirm EAM accepts the value without errors
+
+---
+
+#### **Commenting Out (Hiding) a Field**
+
+To temporarily disable a field without deleting it:
+
+**Step 1: Comment out the HTML**
+
+Find the field in `index.html` and wrap it in HTML comments:
+
+```html
+<!-- DISABLED: Priority Level Field
+<div class="form-group mb-3">
+  <label for="priorityLevel" class="form-label">
+    Priority Level <span class="required">*</span>
+  </label>
+  <select id="priorityLevel" name="priorityLevel" class="form-control form-select" required>
+    <option value="">Select priority...</option>
+    <option value="Low">Low</option>
+    <option value="Medium">Medium</option>
+  </select>
+</div>
+-->
+```
+
+**Step 2: Remove from JavaScript (Optional)**
+
+If you want to completely stop sending the field:
+
+Find the field in the `serviceRequestData` object and comment it out:
+
+```javascript
+additionalInfo: {
+  lidDamage: formData.get("lidDamage") || "",
+  // priorityLevel: formData.get("priorityLevel") || "",  // DISABLED
+  toterBodyDamage: formData.get("toterBodyDamage") || "",
+}
+```
+
+Find the field in the `fieldsList` array and comment it out:
+
+```javascript
+// DISABLED: Priority Level
+// fieldsList.push({
+//   Name: "priority_level",
+//   Value: serviceRequestData.additionalInfo.priorityLevel || ""
+// });
+```
+
+**Step 3: Update GAB Webhook (Optional)**
+
+If the field is no longer being sent, you can remove it from the webhook payload mapping (but it's safe to leave it - it will just send an empty value).
+
+---
+
+### Common Field Types and Examples
+
+#### **Text Input Field**
+
+```html
+<div class="form-group mb-3">
+  <label for="fieldName" class="form-label">
+    Field Label <span class="required">*</span>
+  </label>
+  <input
+    type="text"
+    id="fieldName"
+    name="fieldName"
+    class="form-control"
+    placeholder="Enter text here..."
+    required
+  />
+</div>
+```
+
+#### **Textarea (Multi-line Text)**
+
+```html
+<div class="form-group mb-3">
+  <label for="fieldName" class="form-label">
+    Field Label <span class="required">*</span>
+  </label>
+  <textarea
+    id="fieldName"
+    name="fieldName"
+    class="form-control"
+    rows="4"
+    placeholder="Enter detailed description..."
+    required
+  ></textarea>
+</div>
+```
+
+#### **Dropdown (Select) Field**
+
+```html
+<div class="form-group mb-3">
+  <label for="fieldName" class="form-label">
+    Field Label <span class="required">*</span>
+  </label>
+  <select id="fieldName" name="fieldName" class="form-control form-select" required>
+    <option value="">Select an option...</option>
+    <option value="Option 1">Option 1</option>
+    <option value="Option 2">Option 2</option>
+    <option value="Option 3">Option 3</option>
+  </select>
+</div>
+```
+
+#### **Number Input Field**
+
+```html
+<div class="form-group mb-3">
+  <label for="fieldName" class="form-label">
+    Field Label <span class="required">*</span>
+  </label>
+  <input
+    type="number"
+    id="fieldName"
+    name="fieldName"
+    class="form-control"
+    min="0"
+    max="100"
+    placeholder="Enter number..."
+    required
+  />
+</div>
+```
+
+#### **Date/Time Field**
+
+```html
+<div class="form-group mb-3">
+  <label for="fieldName" class="form-label">
+    Field Label <span class="required">*</span>
+  </label>
+  <input
+    type="datetime-local"
+    id="fieldName"
+    name="fieldName"
+    class="form-control"
+    required
+  />
+</div>
+```
+
+---
+
+### Field Naming Conventions
+
+To maintain consistency across systems, follow these naming conventions:
+
+| Context | Convention | Example |
+|---------|-----------|---------|
+| HTML `id` and `name` | camelCase | `priorityLevel` |
+| JavaScript variable | camelCase | `priorityLevel` |
+| GAB/EAM field name | snake_case | `priority_level` |
+| API payload `Name` | snake_case | `priority_level` |
+| Webhook mapping | snake_case | `{{priority_level}}` |
+
+**Example Mapping:**
+
+```
+HTML: <input id="priorityLevel" name="priorityLevel">
+  ↓
+JavaScript: formData.get("priorityLevel")
+  ↓
+API Payload: Name: "priority_level"
+  ↓
+GAB Field: priority_level
+  ↓
+EAM Field: priority_level
+```
+
+---
+
+### Testing Your Changes
+
+After making changes, follow this testing checklist:
+
+#### **1. Local Testing**
+- [ ] Open the form in a browser
+- [ ] Verify the new field appears correctly
+- [ ] Test form validation (required fields, etc.)
+- [ ] Check browser console for JavaScript errors (F12 → Console)
+
+#### **2. Submission Testing**
+- [ ] Fill out the form completely
+- [ ] Submit a test request
+- [ ] Verify success message appears
+- [ ] Check browser console for errors
+
+#### **3. GAB Verification**
+- [ ] Log into GAB
+- [ ] Navigate to **Public Requests** table
+- [ ] Find your test submission
+- [ ] Verify the new field value was saved correctly
+- [ ] Check that the value matches what you entered
+
+#### **4. EAM Integration Testing**
+- [ ] Log into EAM
+- [ ] Find the work order created from your test submission
+- [ ] Verify the new field value appears in EAM
+- [ ] Confirm the value matches GAB and your form input
+- [ ] Check for any error logs in the webhook history
+
+#### **5. Edge Case Testing**
+- [ ] Test with empty/optional fields
+- [ ] Test with maximum length values
+- [ ] Test with special characters (if applicable)
+- [ ] Test dropdown options one by one
+- [ ] Test form submission without the new field (if optional)
+
+---
+
+### Troubleshooting
+
+#### **Field value not appearing in GAB**
+
+**Possible causes:**
+1. Field name mismatch between HTML and JavaScript
+2. Field not added to `serviceRequestData` object
+3. Field not added to `fieldsList` array
+4. GAB field doesn't exist or has wrong name
+
+**Solution:**
+- Check browser console for errors
+- Verify field names match exactly (case-sensitive)
+- Confirm field exists in GAB table schema
+
+---
+
+#### **Field value not appearing in EAM**
+
+**Possible causes:**
+1. Webhook payload not updated
+2. Field name mismatch between GAB and EAM
+3. EAM field doesn't accept the value format
+4. Webhook is failing (check logs)
+
+**Solution:**
+- Check webhook execution logs in GAB
+- Verify field names match in GAB and EAM
+- Test webhook with sample data
+- Check EAM error logs
+
+---
+
+#### **Dropdown value rejected by EAM**
+
+**Possible causes:**
+1. Dropdown option doesn't exist in EAM
+2. Spelling/capitalization mismatch
+3. Extra spaces in the value
+
+**Solution:**
+- Compare dropdown options character-by-character
+- Ensure exact match (case-sensitive)
+- Remove any leading/trailing spaces
+- Add the option to EAM if missing
+
+---
+
+#### **Form validation not working**
+
+**Possible causes:**
+1. Missing `required` attribute in HTML
+2. Field not included in validation logic
+3. JavaScript error preventing validation
+
+**Solution:**
+- Add `required` attribute to HTML field
+- Check browser console for errors
+- Verify field is included in `requiredFields` array (if applicable)
+
+---
+
+### Quick Reference: Key Code Locations
+
+| What You Need | Where to Find It | Approximate Line |
+|---------------|------------------|------------------|
+| Step 1 HTML fields | Search for "Step 1" or service categories | 2050-2200 |
+| Step 2 HTML fields | Search for "Step 2" or location section | 2400-2850 |
+| Additional info fields | Search for "additionalInfoSection" | 2500-2850 |
+| Form submission handler | Search for `form.addEventListener("submit"` | 6635 |
+| Service request data object | Inside form submit handler | 6708-6745 |
+| Create service request function | Search for `async function createServiceRequest` | 3809 |
+| Field list array | Inside `createServiceRequest` function | 3819-3851 |
+| Conditional fields logic | Inside `createServiceRequest` function | 3854-3932 |
+
+---
+
+### Best Practices
+
+1. **Always test in a development environment first** before deploying to production
+2. **Document your changes** in code comments
+3. **Use descriptive field names** that clearly indicate the field's purpose
+4. **Keep field names consistent** across all systems (Form, GAB, EAM)
+5. **Validate user input** on both client-side (HTML/JavaScript) and server-side (GAB/EAM)
+6. **Provide helpful placeholder text** and form help text for users
+7. **Test the complete integration** from form submission to EAM work order creation
+8. **Keep a backup** of the working form before making major changes
+9. **Use version control** (Git) to track changes
+10. **Communicate changes** to your team and update documentation
+
+---
+
+### Getting Help
+
+If you encounter issues or need assistance:
+
+1. **Check browser console** (F12 → Console) for JavaScript errors
+2. **Review GAB webhook logs** for integration errors
+3. **Check EAM error logs** for rejected values
+4. **Verify field names** match exactly across all systems
+5. **Test with simple values** first (e.g., "Test" instead of complex text)
+6. **Contact your technical support team** with specific error messages
+
+---
+
 ## Conclusion
 
 This form provides a complete, production-ready solution for collecting 311 service requests with advanced geospatial features. For questions or support, please contact your technical support team.
@@ -782,5 +1381,5 @@ This form provides a complete, production-ready solution for collecting 311 serv
 ---
 
 **Last Updated:** November 2024  
-**Document Version:** 1.0  
+**Document Version:** 2.0  
 **Form Version:** 1.0
